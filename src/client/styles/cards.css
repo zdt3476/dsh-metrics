@@ -1,0 +1,140 @@
+.tm-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 1200px) {
+  .tm-cards-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .tm-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.tm-card {
+  background: var(--tm-bg-card);
+  border: 1px solid var(--tm-border);
+  border-radius: var(--tm-radius);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  position: relative;
+  overflow: hidden;
+}
+
+.tm-card::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: transparent;
+  transition: background 0.2s ease;
+}
+
+.tm-card:hover::after {
+  background: var(--tm-accent);
+}
+
+.tm-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--tm-text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.tm-card-value {
+  font-size: 24px;
+  font-weight: 700;
+  font-family: var(--tm-font-mono);
+  color: var(--tm-text);
+  line-height: 1.1;
+  letter-spacing: -0.5px;
+}
+
+.tm-card-sub {
+  font-size: 11px;
+  color: var(--tm-text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tm-account-card {
+  background: var(--tm-bg-card);
+  border: 1px solid var(--tm-border);
+  border-radius: var(--tm-radius);
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.tm-account-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tm-account-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--tm-bg-secondary);
+  border: 1px solid var(--tm-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--tm-accent);
+}
+
+.tm-account-details {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tm-account-name {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.tm-account-balances {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.tm-balance-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tm-balance-label {
+  font-size: 11px;
+  color: var(--tm-text-muted);
+}
+
+.tm-balance-value {
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--tm-font-mono);
+  color: var(--tm-success);
+}

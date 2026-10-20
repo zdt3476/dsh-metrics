@@ -1,0 +1,42 @@
+:root {
+  --tm-bg: var(--dsh-bg-primary, #ffffff);
+  --tm-bg-secondary: var(--dsh-bg-secondary, #f8fafc);
+  --tm-bg-card: var(--dsh-bg-card, #ffffff);
+  --tm-border: var(--dsh-border-color, #e2e8f0);
+  --tm-text: var(--dsh-text-primary, #0f172a);
+  --tm-text-muted: var(--dsh-text-muted, #64748b);
+  --tm-accent: var(--dsh-primary, #3b82f6);
+  --tm-accent-hover: #2563eb;
+  --tm-success: #10b981;
+  --tm-warning: #f59e0b;
+  --tm-danger: #ef4444;
+  --tm-radius: 8px;
+  --tm-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --tm-bg: var(--dsh-bg-primary, #0f172a);
+    --tm-bg-secondary: var(--dsh-bg-secondary, #1e293b);
+    --tm-bg-card: var(--dsh-bg-card, #1e293b);
+    --tm-border: var(--dsh-border-color, #334155);
+    --tm-text: var(--dsh-text-primary, #f8fafc);
+    --tm-text-muted: var(--dsh-text-muted, #94a3b8);
+  }
+}
+
+.tm-container {
+  width: 100%;
+  min-height: 100%;
+  padding: 16px 20px 40px;
+  color: var(--tm-text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tm-container * {
+  box-sizing: border-box;
+}
