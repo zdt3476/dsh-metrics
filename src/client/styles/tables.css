@@ -66,6 +66,24 @@
 .tm-table-wrap {
   width: 100%;
   overflow-x: auto;
+  max-height: 420px;
+  overflow-y: auto;
+  position: relative;
+  scrollbar-width: thin;
+}
+
+.tm-table-wrap::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.tm-table-wrap::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tm-table-wrap::-webkit-scrollbar-thumb {
+  background: var(--tm-border);
+  border-radius: 3px;
 }
 
 .tm-table {
@@ -85,6 +103,10 @@
   cursor: pointer;
   user-select: none;
   white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  box-shadow: 0 1px 0 var(--tm-border);
 }
 
 .tm-table th:hover {

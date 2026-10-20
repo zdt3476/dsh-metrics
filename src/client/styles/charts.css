@@ -86,3 +86,23 @@
   height: 7px;
   border-radius: 50%;
 }
+
+.tm-charts-adaptive-wrap {
+  width: 100%;
+}
+
+.tm-charts-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.tm-chart-card.compact {
+  padding: 12px 14px;
+  gap: 8px;
+}
+
+.tm-chart-card.compact .tm-chart-svg-wrap {
+  height: 160px;
+}
+

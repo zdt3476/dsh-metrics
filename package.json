@@ -1,9 +1,12 @@
 {
   "name": "@zdt3476/dsh-metrics",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "module",
-  "description": "统计所有经过 DeepSeek Harness 的模型调用 Token 用量：按模型/供应商/项目/来源/账号/日期拆分，带缓存命中率、趋势图表与自更新。",
+  "description": "统计所有经过 DeepSeek Harness 的模型调用 Token 用量：按模型/供应商/项目/会话/日期拆分，带概览热力图、自适应趋势图表与自更新。",
   "icon": "icon.svg",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -58,7 +61,7 @@
   "bugs": {
     "url": "https://github.com/zdt3476/dsh-metrics/issues"
   },
-  "author": "20 <zdt3476@gmail.com>",
+  "author": "zdt3476 <zdt3476@gmail.com>",
   "keywords": [
     "dsh-plugin",
     "deepseek-harness",

@@ -176,6 +176,12 @@ export class TokenTracker {
       addUsage(this.store.accounts[accId], usage)
     }
 
+    // 12. By Hour
+    const hour = new Date(now).getHours()
+    this.store.byHour ??= {}
+    this.store.byHour[hour] ??= emptyCounters()
+    addUsage(this.store.byHour[hour], usage)
+
     this.dirty = true
     this.invalidateCache()
     this.scheduleFlush()
@@ -279,6 +285,7 @@ export class TokenTracker {
     this.store.bySession = {}
     this.store.byProject = {}
     this.store.byOrigin = {}
+    this.store.byHour = {}
     this.store.accounts = {}
     this.store.failedAttempts = { count: 0, inputTokens: 0, outputTokens: 0, totalTokens: 0, billable: 0 }
     this.dirty = true
@@ -439,7 +446,6 @@ export class TokenTracker {
         days.map(day => [day, withRate(this.store.byDay[day])]),
       ),
       config: {
-        showSessions: this.config.showSessions,
         trackFailedAttempts: this.config.trackFailedAttempts,
         snapshotCacheMs: this.config.snapshotCacheMs,
         retentionDays: this.config.retentionDays,
@@ -463,14 +469,13 @@ export class TokenTracker {
       byOrigin: Object.fromEntries(
         Object.entries(this.store.byOrigin).map(([origin, counters]) => [origin, withRate(counters)]),
       ),
+      byHour: this.store.byHour ? { ...this.store.byHour } : {},
       failedAttempts: this.config.trackFailedAttempts ? { ...this.store.failedAttempts } : null,
       accounts: Object.fromEntries(
         Object.entries(this.store.accounts).map(([id, entry]) => [id, withRate(entry)]),
       ),
       currentAccount: this.store.currentAccount,
-      bySession: this.config.showSessions
-        ? Object.fromEntries(sessions.map(s => [s.id, s]))
-        : {},
+      bySession: Object.fromEntries(sessions.map(s => [s.id, s])),
       sessionCount: Object.keys(this.store.bySession).length,
       scannedCount: Object.keys(this.store.scanned).length,
       scan: { ...this.scan },

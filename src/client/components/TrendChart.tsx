@@ -1,4 +1,4 @@
-import { useState, type FC } from 'react'
+import { useEffect, useRef, useState, type FC } from 'react'
 import { formatNumber, formatPercent, formatTokens } from '../../shared/format'
 import type { ModelTrend, TokenCountersWithRate } from '../../shared/types'
 
@@ -20,22 +20,36 @@ const PALETTE = [
   '#64748b',
 ]
 
-export const TrendChart: FC<TrendChartProps> = ({ trend, modelTrend, t }) => {
-  const [mode, setMode] = useState<ChartMode>('total')
+interface SingleTrendCardProps {
+  mode: ChartMode
+  trend: Record<string, TokenCountersWithRate>
+  modelTrend?: ModelTrend
+  days: string[]
+  title?: string
+  compact?: boolean
+  showModes?: boolean
+  activeMode?: ChartMode
+  onSelectMode?: (m: ChartMode) => void
+  t: (key: string) => string
+}
+
+const SingleTrendCard: FC<SingleTrendCardProps> = ({
+  mode,
+  trend,
+  modelTrend,
+  days,
+  title,
+  compact = false,
+  showModes = false,
+  activeMode,
+  onSelectMode,
+  t,
+}) => {
   const [hoverIdx, setHoverIdx] = useState<number | null>(null)
 
-  const days = Object.keys(trend).sort()
-  if (days.length === 0) {
-    return (
-      <div className="tm-chart-card">
-        <div className="tm-empty">{t('chart.empty')}</div>
-      </div>
-    )
-  }
-
   const width = 1000
-  const height = 220
-  const padding = { top: 20, right: 30, bottom: 25, left: 55 }
+  const height = compact ? 160 : 220
+  const padding = { top: 16, right: 20, bottom: 22, left: 45 }
   const innerWidth = width - padding.left - padding.right
   const innerHeight = height - padding.top - padding.bottom
 
@@ -43,7 +57,7 @@ export const TrendChart: FC<TrendChartProps> = ({ trend, modelTrend, t }) => {
 
   let maxVal = 1
   if (mode === 'total') {
-    maxVal = Math.max(...days.map(d => trend[d].totalTokens), 100)
+    maxVal = Math.max(...days.map(d => trend[d]?.totalTokens ?? 0), 100)
   } else if (mode === 'cache') {
     maxVal = 1
   } else if (mode === 'model' && modelTrend) {
@@ -61,7 +75,6 @@ export const TrendChart: FC<TrendChartProps> = ({ trend, modelTrend, t }) => {
 
   const getX = (idx: number) => padding.left + idx * xStep
 
-  // 生成平滑贝塞尔曲线
   const buildSmoothPath = (values: number[]) => {
     if (values.length === 0) return { line: '', area: '' }
     if (values.length === 1) {
@@ -91,38 +104,50 @@ export const TrendChart: FC<TrendChartProps> = ({ trend, modelTrend, t }) => {
     return { line: d, area }
   }
 
+  const cardTitle = title || (
+    mode === 'total'
+      ? `${t('chart.title')} · ${t('chart.mode.total')}`
+      : mode === 'cache'
+        ? `${t('chart.title')} · ${t('chart.mode.cache')}`
+        : `${t('chart.title')} · ${t('chart.mode.model')}`
+  )
+
+  const gradId = `tm-grad-${mode}-${compact ? 'c' : 'f'}`
+
   return (
-    <div className="tm-chart-card">
+    <div className={`tm-chart-card ${compact ? 'compact' : ''}`}>
       <div className="tm-chart-header">
-        <h3 className="tm-chart-title">
-          <span>{t('chart.title')}</span>
+        <h3 className="tm-chart-title" style={compact ? { fontSize: '13px' } : undefined}>
+          <span>{cardTitle}</span>
         </h3>
 
-        <div className="tm-chart-modes">
-          <button
-            type="button"
-            className={`tm-chart-mode-btn ${mode === 'total' ? 'active' : ''}`}
-            onClick={() => setMode('total')}
-          >
-            {t('chart.mode.total')}
-          </button>
-          <button
-            type="button"
-            className={`tm-chart-mode-btn ${mode === 'cache' ? 'active' : ''}`}
-            onClick={() => setMode('cache')}
-          >
-            {t('chart.mode.cache')}
-          </button>
-          {modelTrend && modelTrend.series.length > 0 && (
+        {showModes && onSelectMode && (
+          <div className="tm-chart-modes">
             <button
               type="button"
-              className={`tm-chart-mode-btn ${mode === 'model' ? 'active' : ''}`}
-              onClick={() => setMode('model')}
+              className={`tm-chart-mode-btn ${activeMode === 'total' ? 'active' : ''}`}
+              onClick={() => onSelectMode('total')}
             >
-              {t('chart.mode.model')}
+              {t('chart.mode.total')}
             </button>
-          )}
-        </div>
+            <button
+              type="button"
+              className={`tm-chart-mode-btn ${activeMode === 'cache' ? 'active' : ''}`}
+              onClick={() => onSelectMode('cache')}
+            >
+              {t('chart.mode.cache')}
+            </button>
+            {modelTrend && modelTrend.series.length > 0 && (
+              <button
+                type="button"
+                className={`tm-chart-mode-btn ${activeMode === 'model' ? 'active' : ''}`}
+                onClick={() => onSelectMode('model')}
+              >
+                {t('chart.mode.model')}
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="tm-chart-svg-wrap">
@@ -131,7 +156,7 @@ export const TrendChart: FC<TrendChartProps> = ({ trend, modelTrend, t }) => {
           className="tm-chart-svg"
           onMouseLeave={() => setHoverIdx(null)}
         >
-          {/* 水平网格刻度 */}
+          {/* 水平网格线 */}
           {[0, 0.33, 0.66, 1].map((r, i) => {
             const y = padding.top + innerHeight * (1 - r)
             const label = mode === 'cache' ? `${Math.round(r * 100)}%` : formatTokens(maxVal * r)
@@ -148,10 +173,10 @@ export const TrendChart: FC<TrendChartProps> = ({ trend, modelTrend, t }) => {
                   strokeOpacity="0.8"
                 />
                 <text
-                  x={padding.left - 8}
+                  x={padding.left - 6}
                   y={y + 3}
                   textAnchor="end"
-                  fontSize="10"
+                  fontSize="9"
                   fill="var(--tm-text-muted)"
                   fontFamily="var(--tm-font-mono)"
                 >
@@ -163,7 +188,8 @@ export const TrendChart: FC<TrendChartProps> = ({ trend, modelTrend, t }) => {
 
           {/* X 轴日期刻度 */}
           {days.map((day, idx) => {
-            if (days.length > 12 && idx % Math.ceil(days.length / 10) !== 0 && idx !== days.length - 1) {
+            const step = compact ? Math.ceil(days.length / 5) : Math.ceil(days.length / 10)
+            if (days.length > 6 && idx % step !== 0 && idx !== days.length - 1) {
               return null
             }
             const x = getX(idx)
@@ -171,9 +197,9 @@ export const TrendChart: FC<TrendChartProps> = ({ trend, modelTrend, t }) => {
               <text
                 key={`label-${day}`}
                 x={x}
-                y={height - 6}
+                y={height - 5}
                 textAnchor="middle"
-                fontSize="10"
+                fontSize="9"
                 fill="var(--tm-text-muted)"
               >
                 {day.slice(5)}
@@ -181,29 +207,29 @@ export const TrendChart: FC<TrendChartProps> = ({ trend, modelTrend, t }) => {
             )
           })}
 
-          {/* 总量平滑曲线与发光面积 */}
+          {/* 总量平滑曲线与渐变 */}
           {mode === 'total' && (() => {
-            const vals = days.map(d => trend[d].totalTokens)
+            const vals = days.map(d => trend[d]?.totalTokens ?? 0)
             const { line, area } = buildSmoothPath(vals)
             return (
               <g>
                 <defs>
-                  <linearGradient id="tm-grad-total" x1="0" y1="0" x2="0" y2="1">
+                  <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.3" />
                     <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.0" />
                   </linearGradient>
                 </defs>
-                <path d={area} fill="url(#tm-grad-total)" />
-                <path d={line} fill="none" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" />
+                <path d={area} fill={`url(#${gradId})`} />
+                <path d={line} fill="none" stroke="#3b82f6" strokeWidth="2.2" strokeLinecap="round" />
                 {days.map((_, i) => (
                   <circle
                     key={`dot-${i}`}
                     cx={getX(i)}
                     cy={getY(vals[i])}
-                    r={hoverIdx === i ? 5 : 2.5}
+                    r={hoverIdx === i ? 4.5 : 2}
                     fill="#3b82f6"
                     stroke="var(--tm-bg-card)"
-                    strokeWidth="1.5"
+                    strokeWidth="1.2"
                   />
                 ))}
               </g>
@@ -212,34 +238,34 @@ export const TrendChart: FC<TrendChartProps> = ({ trend, modelTrend, t }) => {
 
           {/* 缓存命中率平滑曲线 */}
           {mode === 'cache' && (() => {
-            const vals = days.map(d => trend[d].cacheHitRate)
+            const vals = days.map(d => trend[d]?.cacheHitRate ?? 0)
             const { line, area } = buildSmoothPath(vals)
             return (
               <g>
                 <defs>
-                  <linearGradient id="tm-grad-cache" x1="0" y1="0" x2="0" y2="1">
+                  <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#10b981" stopOpacity="0.3" />
                     <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
                   </linearGradient>
                 </defs>
-                <path d={area} fill="url(#tm-grad-cache)" />
-                <path d={line} fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" />
+                <path d={area} fill={`url(#${gradId})`} />
+                <path d={line} fill="none" stroke="#10b981" strokeWidth="2.2" strokeLinecap="round" />
                 {days.map((_, i) => (
                   <circle
                     key={`dot-${i}`}
                     cx={getX(i)}
                     cy={getY(vals[i])}
-                    r={hoverIdx === i ? 5 : 2.5}
+                    r={hoverIdx === i ? 4.5 : 2}
                     fill="#10b981"
                     stroke="var(--tm-bg-card)"
-                    strokeWidth="1.5"
+                    strokeWidth="1.2"
                   />
                 ))}
               </g>
             )
           })()}
 
-          {/* 按模型对比曲线 */}
+          {/* 模型对比曲线 */}
           {mode === 'model' && modelTrend && (
             <g>
               {modelTrend.series.map((series, sIdx) => {
@@ -252,7 +278,7 @@ export const TrendChart: FC<TrendChartProps> = ({ trend, modelTrend, t }) => {
                     d={line}
                     fill="none"
                     stroke={color}
-                    strokeWidth="2"
+                    strokeWidth="1.8"
                     strokeOpacity="0.85"
                   />
                 )
@@ -291,44 +317,44 @@ export const TrendChart: FC<TrendChartProps> = ({ trend, modelTrend, t }) => {
           )}
         </svg>
 
-        {/* 现代悬浮卡片 Tooltip */}
-        {hoverIdx !== null && (
+        {/* 悬浮卡片 Tooltip */}
+        {hoverIdx !== null && days[hoverIdx] && (
           <div
             style={{
               position: 'absolute',
-              top: '8px',
-              left: `${Math.min(85, Math.max(10, (hoverIdx / (days.length - 1 || 1)) * 100))}%`,
+              top: '6px',
+              left: `${Math.min(80, Math.max(15, (hoverIdx / (days.length - 1 || 1)) * 100))}%`,
               background: 'var(--tm-bg-card)',
               border: '1px solid var(--tm-border)',
-              padding: '6px 10px',
+              padding: '5px 8px',
               borderRadius: '6px',
-              boxShadow: '0 8px 20px rgba(0,0,0,0.25)',
+              boxShadow: '0 6px 16px rgba(0,0,0,0.2)',
               fontSize: '11px',
               pointerEvents: 'none',
               transform: 'translateX(-50%)',
               zIndex: 10,
-              minWidth: '120px',
+              minWidth: '100px',
             }}
           >
-            <div style={{ fontWeight: 600, color: 'var(--tm-text-muted)', marginBottom: '3px' }}>
+            <div style={{ fontWeight: 600, color: 'var(--tm-text-muted)', marginBottom: '2px' }}>
               {days[hoverIdx]}
             </div>
-            {mode === 'total' && (
+            {mode === 'total' && trend[days[hoverIdx]] && (
               <div>
-                <div style={{ fontWeight: 600, fontSize: '13px' }}>
+                <div style={{ fontWeight: 600, fontSize: '12px' }}>
                   {formatNumber(trend[days[hoverIdx]].totalTokens)}
                 </div>
-                <div style={{ color: 'var(--tm-text-muted)' }}>
+                <div style={{ color: 'var(--tm-text-muted)', fontSize: '10px' }}>
                   {t('field.calls')}: {trend[days[hoverIdx]].calls}
                 </div>
               </div>
             )}
-            {mode === 'cache' && (
+            {mode === 'cache' && trend[days[hoverIdx]] && (
               <div>
-                <div style={{ fontWeight: 600, fontSize: '13px', color: 'var(--tm-success)' }}>
+                <div style={{ fontWeight: 600, fontSize: '12px', color: 'var(--tm-success)' }}>
                   {formatPercent(trend[days[hoverIdx]].cacheHitRate)}
                 </div>
-                <div style={{ color: 'var(--tm-text-muted)' }}>
+                <div style={{ color: 'var(--tm-text-muted)', fontSize: '10px' }}>
                   {t('field.cacheRead')}: {formatTokens(trend[days[hoverIdx]].cacheReadTokens)}
                 </div>
               </div>
@@ -336,9 +362,9 @@ export const TrendChart: FC<TrendChartProps> = ({ trend, modelTrend, t }) => {
             {mode === 'model' && modelTrend && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                 {modelTrend.series.map((s, idx) => (
-                  <div key={s.key} style={{ display: 'flex', justifyContent: 'space-between', gap: '8px' }}>
-                    <span style={{ color: PALETTE[idx % PALETTE.length] }}>{s.label}:</span>
-                    <span style={{ fontWeight: 500 }}>{formatTokens(s.values[days[hoverIdx]] ?? 0)}</span>
+                  <div key={s.key} style={{ display: 'flex', justifyContent: 'space-between', gap: '6px' }}>
+                    <span style={{ color: PALETTE[idx % PALETTE.length], fontSize: '10px' }}>{s.label}:</span>
+                    <span style={{ fontWeight: 500, fontSize: '10px' }}>{formatTokens(s.values[days[hoverIdx]] ?? 0)}</span>
                   </div>
                 ))}
               </div>
@@ -349,14 +375,91 @@ export const TrendChart: FC<TrendChartProps> = ({ trend, modelTrend, t }) => {
 
       {/* 底部紧凑图例 */}
       {mode === 'model' && modelTrend && (
-        <div className="tm-chart-legend">
+        <div className="tm-chart-legend" style={{ paddingTop: '2px', gap: '10px' }}>
           {modelTrend.series.map((s, idx) => (
-            <div key={s.key} className="tm-legend-item">
+            <div key={s.key} className="tm-legend-item" style={{ fontSize: '10px' }}>
               <span className="tm-legend-dot" style={{ background: PALETTE[idx % PALETTE.length] }} />
               <span>{s.label}</span>
             </div>
           ))}
         </div>
+      )}
+    </div>
+  )
+}
+
+export const TrendChart: FC<TrendChartProps> = ({ trend, modelTrend, t }) => {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [containerWidth, setContainerWidth] = useState<number>(1000)
+  const [mode, setMode] = useState<ChartMode>('total')
+
+  const days = Object.keys(trend).sort()
+
+  useEffect(() => {
+    if (!containerRef.current) return
+    const ro = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        setContainerWidth(entry.contentRect.width)
+      }
+    })
+    ro.observe(containerRef.current)
+    return () => ro.disconnect()
+  }, [])
+
+  if (days.length === 0) {
+    return (
+      <div className="tm-chart-card">
+        <div className="tm-empty">{t('chart.empty')}</div>
+      </div>
+    )
+  }
+
+  // 当容器宽度 >= 860px 时触发大屏三栏自适应
+  const isWide = containerWidth >= 860
+
+  return (
+    <div ref={containerRef} className="tm-charts-adaptive-wrap">
+      {isWide ? (
+        // 大屏：直接展示三栏数据与图表
+        <div className="tm-charts-grid-3">
+          <SingleTrendCard
+            mode="total"
+            title={`${t('chart.title')} · ${t('chart.mode.total')}`}
+            trend={trend}
+            days={days}
+            compact
+            t={t}
+          />
+          <SingleTrendCard
+            mode="cache"
+            title={`${t('chart.title')} · ${t('chart.mode.cache')}`}
+            trend={trend}
+            days={days}
+            compact
+            t={t}
+          />
+          <SingleTrendCard
+            mode="model"
+            title={`${t('chart.title')} · ${t('chart.mode.model')}`}
+            trend={trend}
+            modelTrend={modelTrend}
+            days={days}
+            compact
+            t={t}
+          />
+        </div>
+      ) : (
+        // 小屏：三栏需要切换，显示单图表与模式切换药丸
+        <SingleTrendCard
+          mode={mode}
+          trend={trend}
+          modelTrend={modelTrend}
+          days={days}
+          showModes
+          activeMode={mode}
+          onSelectMode={setMode}
+          t={t}
+        />
       )}
     </div>
   )

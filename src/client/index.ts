@@ -15,6 +15,7 @@ import './styles/panel.css'
 import './styles/cards.css'
 import './styles/charts.css'
 import './styles/tables.css'
+import './styles/overview.css'
 
 const NS = 'dsh-metrics'
 const PANEL_ID = 'dsh-metrics'

@@ -13,10 +13,9 @@
 #       flushDelayMs: 2000       # 落盘防抖，毫秒（250–60000）
 #       snapshotCacheMs: 3000    # 聚合快照缓存，毫秒（0–60000）；0 表示不缓存
 #       retentionDays: 400       # 按天分桶保留天数（0–3650）；0 表示不裁剪
-#       maxSessions: 500         # 会话明细上限（0–5000，showSessions 打开时生效）
+#       maxSessions: 500         # 会话明细上限（0–5000）
 #       maxTrendSeries: 6        # 趋势图最多画几条模型曲线（1–20），多出的聚合成「其他」
 #       maxSeenEntries: 200000   # 去重表上限（1000–2000000）
-#       showSessions: false      # 是否展示「按会话」明细
 #       trackFailedAttempts: false  # 是否统计失败请求；适配器目前只上报全 0 usage，开启后仅见次数
 #       trackAccount: true       # 是否读取登录账号身份与余额（只读，不碰凭据）
 #       autoUpdate: true         # 是否启用自更新（检查版本、安装、热重载）
@@ -25,4 +24,4 @@
 # 完整说明见 README.md 的「配置」一节。
 - insert:
     - id: dsh-metrics
-      name: dsh-metrics
+      name: '@zdt3476/dsh-metrics'

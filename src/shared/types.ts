@@ -111,7 +111,6 @@ export interface PluginConfig {
   maxSessions: number
   maxTrendSeries: number
   maxSeenEntries: number
-  showSessions: boolean
   trackFailedAttempts: boolean
   trackAccount: boolean
   autoUpdate: boolean
@@ -129,7 +128,6 @@ export interface MetricsSnapshot {
   }
   trend: Record<string, TokenCountersWithRate>
   config: {
-    showSessions: boolean
     trackFailedAttempts: boolean
     snapshotCacheMs: number
     retentionDays: number
@@ -143,6 +141,7 @@ export interface MetricsSnapshot {
   byModelName: Record<string, TokenCountersWithRate>
   byProject: Record<string, TokenCountersWithRate>
   byOrigin: Record<string, TokenCountersWithRate>
+  byHour?: Record<number, TokenCounters>
   failedAttempts: FailedAttemptsRecord | null
   accounts: Record<string, TokenCountersWithRate>
   currentAccount: AccountSnapshot | null
@@ -184,6 +183,7 @@ export interface StoreData {
   }>
   byProject: Record<string, TokenCounters>
   byOrigin: Record<string, TokenCounters>
+  byHour?: Record<number, TokenCounters>
   failedAttempts: FailedAttemptsRecord
   accounts: Record<string, TokenCounters>
   currentAccount: AccountSnapshot | null

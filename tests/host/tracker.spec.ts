@@ -42,7 +42,7 @@ describe('TokenTracker', () => {
     const tmp = mkdtempSync(join(tmpdir(), 'tm-tracker-snap-'))
     const tracker = new TokenTracker({
       buildId: 'test-2',
-      config: resolveConfig({ showSessions: true }),
+      config: resolveConfig({}),
       home: tmp,
     })
 
@@ -81,6 +81,9 @@ describe('TokenTracker', () => {
     expect(snap.byOrigin.main).toBeDefined()
     expect(snap.byOrigin.subagent).toBeDefined()
     expect(snap.bySession['sess-a']).toBeDefined()
+    expect(snap.byHour).toBeDefined()
+    const nowHour = new Date().getHours()
+    expect(snap.byHour?.[nowHour]?.calls).toBe(2)
 
     rmSync(tmp, { recursive: true, force: true })
   })

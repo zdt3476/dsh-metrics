@@ -3,7 +3,7 @@ import { formatNumber, formatPercent, formatTokens } from '../../shared/format'
 import type { MetricsSnapshot, TokenCounters, TokenCountersWithRate } from '../../shared/types'
 import { cacheHitRate } from '../../shared/utils'
 
-export type TableTab = 'model' | 'provider' | 'project' | 'origin' | 'account' | 'session'
+export type TableTab = 'model' | 'provider' | 'project' | 'session'
 
 export interface BreakdownTableProps {
   snapshot: MetricsSnapshot
@@ -28,13 +28,8 @@ export const BreakdownTable: FC<BreakdownTableProps> = ({ snapshot, t }) => {
     { key: 'model', label: t('table.model') },
     { key: 'provider', label: t('table.provider') },
     { key: 'project', label: t('table.project') },
-    { key: 'origin', label: t('table.origin') },
-    { key: 'account', label: t('table.account') },
+    { key: 'session', label: t('table.session') || t('column.session') },
   ]
-
-  if (snapshot.config.showSessions) {
-    tabs.push({ key: 'session', label: t('column.session') })
-  }
 
   const rawRows: RowItem[] = useMemo(() => {
     switch (activeTab) {
@@ -56,23 +51,11 @@ export const BreakdownTable: FC<BreakdownTableProps> = ({ snapshot, t }) => {
           name: cwd,
           counters,
         }))
-      case 'origin':
-        return Object.entries(snapshot.byOrigin).map(([origin, counters]) => ({
-          key: origin,
-          name: t(`origin.${origin}`) || origin,
-          counters,
-        }))
-      case 'account':
-        return Object.entries(snapshot.accounts).map(([id, counters]) => ({
-          key: id,
-          name: id === snapshot.currentAccount?.id ? `${id} (${t('account.current')})` : id,
-          counters,
-        }))
       case 'session':
         return Object.values(snapshot.bySession).map(s => ({
           key: s.id,
           name: s.title || t('noTitle'),
-          extra: `${s.provider || ''}/${s.model || ''}`,
+          extra: `${s.provider || ''}${s.provider && s.model ? '/' : ''}${s.model || ''}`,
           counters: s.counters,
         }))
       default:

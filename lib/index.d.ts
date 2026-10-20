@@ -411,7 +411,6 @@ interface PluginConfig {
   maxSessions: number;
   maxTrendSeries: number;
   maxSeenEntries: number;
-  showSessions: boolean;
   trackFailedAttempts: boolean;
   trackAccount: boolean;
   autoUpdate: boolean;
@@ -428,7 +427,6 @@ interface MetricsSnapshot {
   };
   trend: Record<string, TokenCountersWithRate>;
   config: {
-    showSessions: boolean;
     trackFailedAttempts: boolean;
     snapshotCacheMs: number;
     retentionDays: number;
@@ -442,6 +440,7 @@ interface MetricsSnapshot {
   byModelName: Record<string, TokenCountersWithRate>;
   byProject: Record<string, TokenCountersWithRate>;
   byOrigin: Record<string, TokenCountersWithRate>;
+  byHour?: Record<number, TokenCounters>;
   failedAttempts: FailedAttemptsRecord | null;
   accounts: Record<string, TokenCountersWithRate>;
   currentAccount: AccountSnapshot | null;
@@ -482,6 +481,7 @@ interface StoreData {
   }>;
   byProject: Record<string, TokenCounters>;
   byOrigin: Record<string, TokenCounters>;
+  byHour?: Record<number, TokenCounters>;
   failedAttempts: FailedAttemptsRecord;
   accounts: Record<string, TokenCounters>;
   currentAccount: AccountSnapshot | null;
@@ -506,7 +506,6 @@ export declare const Config: Schema<Schemastery.ObjectS<NoInfer<{
   maxSessions: Schema<number, number, "defined">;
   maxTrendSeries: Schema<number, number, "defined">;
   maxSeenEntries: Schema<number, number, "defined">;
-  showSessions: Schema<boolean, boolean, "defined">;
   trackFailedAttempts: Schema<boolean, boolean, "defined">;
   trackAccount: Schema<boolean, boolean, "defined">;
   autoUpdate: Schema<boolean, boolean, "defined">;
@@ -519,7 +518,6 @@ export declare const Config: Schema<Schemastery.ObjectS<NoInfer<{
   maxSessions: Schema<number, number, "defined">;
   maxTrendSeries: Schema<number, number, "defined">;
   maxSeenEntries: Schema<number, number, "defined">;
-  showSessions: Schema<boolean, boolean, "defined">;
   trackFailedAttempts: Schema<boolean, boolean, "defined">;
   trackAccount: Schema<boolean, boolean, "defined">;
   autoUpdate: Schema<boolean, boolean, "defined">;
@@ -588,7 +586,7 @@ declare global {
 //#endregion
 //#region src/host/index.d.ts
 export declare const name = "dsh-metrics";
-export declare const version = "0.2.0";
+export declare const version = "0.3.0";
 export declare function apply(ctx: Context, rawConfig?: unknown): void;
 //#endregion
 export type { AccountSnapshot, AccountWallet, FailedAttemptsRecord, IntegrityCheck, MetricsSnapshot, ModelTrend, PluginConfig, RawTokenUsage, ScanProgress, SessionEventRecordInput, SessionSummaryItem, StoreData, TokenCounters, TokenCountersWithRate, TrendSeries, UpdateCheckResult };

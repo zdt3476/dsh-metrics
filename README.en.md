@@ -30,7 +30,9 @@ By intercepting internal model invocation events within the DSH host, it aggrega
 ## ✨ Features
 
 - 🎯 **Comprehensive Call Auditing**: Dual-channel event capture covering all `assistant/message` events, with waterfall interceptors for session title generation, memory compaction, and custom model streams.
-- 📊 **Multi-dimensional Breakdown**: Drill down into usage by **Model**, **Provider**, **Project directory (CWD)**, **Session Origin** (main, subagent, workflow), and **Account**.
+- 📊 **Multi-dimensional Breakdown**: Drill down into usage by **Model**, **Provider**, **Project directory (CWD)**, and **Session**, with in-container scrolling and sticky table headers for long lists.
+- 🗓️ **Overview Dashboard & Activity Heatmap**: Six core metrics (sessions, messages, total tokens, active days, peak hour, top model) switchable across All / 30 days / 7 days, paired with a GitHub-style weekly heatmap and a model usage ranking.
+- 📈 **Adaptive Trend Chart**: Expands into three side-by-side charts (total, cache rate, model comparison) on wide screens and collapses to a single swappable chart on narrow ones.
 - ⚡ **Prompt Cache Efficiency**: Explicitly measures `cacheReadTokens` versus fresh input to calculate the exact cache hit rate, helping optimize prompt engineering and context costs.
 - 🔄 **Offline Historical Backfill**: Automatically scans and recovers historical sessions from local disk storage (`.jsonl.zstd`) using native decompression, guaranteeing recovery even without external persistence services.
 - 💳 **Official Account Integration**: Seamlessly integrates with DeepSeek account services, displaying account balance, bonus vouchers, and shortcuts to official usage dashboards.
@@ -48,7 +50,7 @@ By intercepting internal model invocation events within the DSH host, it aggrega
 Run inside your DSH shell:
 
 ```bash
-plugin_manager install_bundle /path/to/dsh-metrics
+plugin_manager install_bundle @zdt3476/dsh-metrics
 ```
 
 ### Method 2: Manual Profile Setup
@@ -59,11 +61,11 @@ Add the dependency to your profile's `package.json` (e.g. `~/.dsh/profiles/web/p
 {
   "dsh": {
     "profile": {
-      "bundles": ["dsh-metrics"]
+      "bundles": ["@zdt3476/dsh-metrics"]
     }
   },
   "dependencies": {
-    "dsh-metrics": "link:/path/to/dsh-metrics"
+    "@zdt3476/dsh-metrics": "^0.3.0"
   }
 }
 ```
@@ -73,7 +75,7 @@ Then register the bundle in your profile's `cordis.patch.yml`:
 ```yaml
 - insert:
     - id: dsh-metrics
-      name: dsh-metrics
+      name: '@zdt3476/dsh-metrics'
 ```
 
 Restart DSH, and the **Metrics** icon will appear on the left sidebar. The plugin automatically backfills past session logs on first load.
@@ -107,7 +109,6 @@ All configuration values have sensible defaults. To customize, add an override i
     retentionDays: 400        # Days of daily bucket history to retain (0 = no pruning)
     maxSessions: 500          # Maximum sessions kept in detail views
     maxTrendSeries: 6         # Max top model lines shown in trend charts
-    showSessions: false       # Whether to expose the per-session table
     trackAccount: true        # Whether to poll official account balance
     autoUpdate: true          # Enable self-updating checks
     watchFiles: false         # Enable live hot-reloading for development

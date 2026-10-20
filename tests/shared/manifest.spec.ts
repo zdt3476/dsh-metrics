@@ -7,7 +7,7 @@ describe('package manifest & artifacts', () => {
   const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))
 
   it('declares correct package metadata', () => {
-    expect(pkg.name).toBe('dsh-metrics')
+    expect(pkg.name).toBe('@zdt3476/dsh-metrics')
     expect(pkg.version).toBeDefined()
     expect(pkg.main).toBe('lib/index.js')
     expect(pkg.types).toBe('lib/index.d.ts')

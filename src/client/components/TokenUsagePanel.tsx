@@ -4,6 +4,7 @@ import type { MetricsSnapshot, UpdateCheckResult } from '../../shared/types'
 import { AccountCard } from './AccountCard'
 import { BreakdownTable } from './BreakdownTable'
 import { MetricCard } from './MetricCard'
+import { OverviewHeatmapCard } from './OverviewHeatmapCard'
 import { TrendChart } from './TrendChart'
 import { UpdateBanner } from './UpdateBanner'
 
@@ -165,6 +166,12 @@ export const TokenUsagePanel: FC<TokenUsagePanelProps> = ({ t }) => {
         </div>
       )}
 
+      {/* 账号与余额卡片置顶 */}
+      <AccountCard account={snapshot.currentAccount} t={t} />
+
+      {/* 现代概览与活动热力图 */}
+      <OverviewHeatmapCard snapshot={snapshot} t={t} />
+
       {/* 核心 KPI 6 列卡片 */}
       <div className="tm-cards-grid">
         <MetricCard
@@ -222,9 +229,6 @@ export const TokenUsagePanel: FC<TokenUsagePanelProps> = ({ t }) => {
           }
         />
       </div>
-
-      {/* 账号与余额卡片 */}
-      <AccountCard account={snapshot.currentAccount} t={t} />
 
       {/* 趋势图表 */}
       <TrendChart

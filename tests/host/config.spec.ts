@@ -25,11 +25,9 @@ describe('config', () => {
 
   it('respects boolean flags', () => {
     const config = resolveConfig({
-      showSessions: true,
       trackAccount: false,
       autoUpdate: false,
     })
-    expect(config.showSessions).toBe(true)
     expect(config.trackAccount).toBe(false)
     expect(config.autoUpdate).toBe(false)
   })
