@@ -46,6 +46,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.tests.json",
     "test": "pnpm run typecheck && vitest run",
     "test:watch": "vitest",
+    "check": "pnpm test && pnpm run build",
     "prepack": "pnpm run build"
   },
   "license": "MIT",
