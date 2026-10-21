@@ -1,12 +1,12 @@
 {
   "name": "@zdt3476/dsh-metrics",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": false,
   "publishConfig": {
     "access": "public"
   },
   "type": "module",
-  "description": "统计所有经过 DeepSeek Harness 的模型调用 Token 用量：按模型/供应商/项目/会话/日期拆分，带概览热力图、自适应趋势图表与自更新。",
+  "description": "统计所有经过 DeepSeek Harness 的模型调用 Token 用量：按模型/供应商/项目/会话/日期拆分，带总览统计、活跃热力图、自适应趋势图表与自更新。",
   "icon": "icon.svg",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",

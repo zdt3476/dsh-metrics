@@ -586,7 +586,7 @@ declare global {
 //#endregion
 //#region src/host/index.d.ts
 export declare const name = "dsh-metrics";
-export declare const version = "0.3.0";
+export declare const version = "0.4.0";
 export declare function apply(ctx: Context, rawConfig?: unknown): void;
 //#endregion
 export type { AccountSnapshot, AccountWallet, FailedAttemptsRecord, IntegrityCheck, MetricsSnapshot, ModelTrend, PluginConfig, RawTokenUsage, ScanProgress, SessionEventRecordInput, SessionSummaryItem, StoreData, TokenCounters, TokenCountersWithRate, TrendSeries, UpdateCheckResult };
