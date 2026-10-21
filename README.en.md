@@ -31,9 +31,9 @@ By intercepting internal model invocation events within the DSH host, it aggrega
 
 - 🎯 **Comprehensive Call Auditing**: Dual-channel event capture covering all `assistant/message` events, with waterfall interceptors for session title generation, memory compaction, and custom model streams.
 - 📊 **Multi-dimensional Breakdown**: Drill down into usage by **Model**, **Provider**, **Project directory (CWD)**, and **Session**, with in-container scrolling and sticky table headers for long lists.
-- 🧮 **De-duplicated Summary**: every aggregate appears exactly once — total usage (with today / this week), cache hit rate, calls, sessions, active days and peak hour live in one band, plus a stacked bar for the input / output / cache-read / cache-write composition.
-- 🗓️ **Activity & Rhythm Insights**: a GitHub-style weekly heatmap aligned to calendar weeks, paired with average usage per active day, peak day and longest streak.
-- 📈 **Adaptive Trend Chart**: Expands into three side-by-side charts (total, cache rate, model comparison) on wide screens and collapses to a single swappable chart on narrow ones.
+- 🧮 **Metric Tiles**: two primary tiles (requests with success rate / OK / failed, and total tokens with inline composition) plus four rate tiles (RPM, TPM, cache hit rate, per-call cost), each with a 30-day sparkline.
+- 🍩 **Model Usage Donut**: a donut share plus a legend list (model, usage, share) switchable between by-usage and by-calls.
+- 📈 **Multi-model Trend Chart**: one grouped line chart with legend and hover details, with automatically thinned time-axis labels.
 - ⚡ **Prompt Cache Efficiency**: Explicitly measures `cacheReadTokens` versus fresh input to calculate the exact cache hit rate, helping optimize prompt engineering and context costs.
 - 🔄 **Offline Historical Backfill**: Automatically scans and recovers historical sessions from local disk storage (`.jsonl.zstd`) using native decompression, guaranteeing recovery even without external persistence services.
 - 💳 **Official Account Integration**: Seamlessly integrates with DeepSeek account services, displaying account balance, bonus vouchers, and shortcuts to official usage dashboards.
