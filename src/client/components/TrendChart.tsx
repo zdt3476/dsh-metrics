@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useState, type FC } from 'react'
 import { formatNumber, formatPercent, formatTokens } from '../../shared/format'
 import type { ModelTrend, TokenCountersWithRate } from '../../shared/types'
+import { MODEL_PALETTE as PALETTE } from '../colors'
 
 export type ChartMode = 'total' | 'cache' | 'model'
 
@@ -10,15 +11,6 @@ export interface TrendChartProps {
   t: (key: string) => string
 }
 
-const PALETTE = [
-  '#3b82f6',
-  '#10b981',
-  '#f59e0b',
-  '#ec4899',
-  '#8b5cf6',
-  '#06b6d4',
-  '#64748b',
-]
 
 interface SingleTrendCardProps {
   mode: ChartMode

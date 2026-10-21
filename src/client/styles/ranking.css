@@ -188,6 +188,26 @@
   min-width: 0;
 }
 
+.tm-rank-titlerow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+/* 模型色点：颜色由模型名哈希决定，与其他视图保持一致 */
+.tm-rank-dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--tm-text-muted);
+}
+
+.tm-rank-dot.empty {
+  background: transparent;
+}
+
 .tm-rank-name {
   font-size: 12px;
   font-weight: 500;
@@ -204,6 +224,11 @@
   font-size: 11px;
   color: var(--tm-text-muted);
   overflow: hidden;
+}
+
+.tm-rank-time {
+  white-space: nowrap;
+  color: var(--tm-text-muted);
 }
 
 .tm-rank-sub {

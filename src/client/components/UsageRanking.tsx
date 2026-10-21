@@ -2,6 +2,8 @@ import { useMemo, useState, type FC } from 'react'
 import { formatNumber, formatPercent, formatTokens } from '../../shared/format'
 import type { MetricsSnapshot, TokenCounters, TokenCountersWithRate } from '../../shared/types'
 import { cacheHitRate } from '../../shared/utils'
+import { colorForName } from '../colors'
+import { relativeTime, type RelativeTime } from '../derived'
 
 export type RankingTab = 'model' | 'provider' | 'project' | 'session'
 export type RankingSort = 'totalTokens' | 'calls' | 'cacheRate'
@@ -16,6 +18,18 @@ interface RankRow {
   name: string
   sub?: string
   counters: TokenCounters | TokenCountersWithRate
+  /** 有模型归属时给出色点，便于在榜单里快速区分模型。 */
+  dotColor?: string
+  /** 最近活跃时间，仅会话维度提供。 */
+  lastAt?: number
+}
+
+function formatRelative(time: RelativeTime | null, t: (key: string) => string): string | null {
+  if (!time) return null
+  if (time.unit === 'now') return t('time.now')
+  if (time.unit === 'minute') return t('time.minute').replace('{count}', String(time.count))
+  if (time.unit === 'hour') return t('time.hour').replace('{count}', String(time.count))
+  return t('time.day').replace('{count}', String(time.count))
 }
 
 const SORTS: RankingSort[] = ['totalTokens', 'calls', 'cacheRate']
@@ -42,7 +56,12 @@ export const UsageRanking: FC<UsageRankingProps> = ({ snapshot, t }) => {
   const rows: RankRow[] = useMemo(() => {
     switch (activeTab) {
       case 'model':
-        return Object.entries(snapshot.byModelName).map(([name, counters]) => ({ key: name, name, counters }))
+        return Object.entries(snapshot.byModelName).map(([name, counters]) => ({
+          key: name,
+          name,
+          dotColor: colorForName(name),
+          counters,
+        }))
       case 'provider':
         return Object.entries(snapshot.byProvider).map(([name, counters]) => ({ key: name, name, counters }))
       case 'project':
@@ -52,6 +71,8 @@ export const UsageRanking: FC<UsageRankingProps> = ({ snapshot, t }) => {
           key: session.id,
           name: session.title || t('noTitle'),
           sub: [session.provider, session.model].filter(Boolean).join(' / '),
+          dotColor: session.model ? colorForName(session.model) : undefined,
+          lastAt: session.lastAt || session.firstAt,
           counters: session.counters,
         }))
       default:
@@ -128,6 +149,7 @@ export const UsageRanking: FC<UsageRankingProps> = ({ snapshot, t }) => {
             const share = Math.min(100, Math.max(0, ((counters.totalTokens ?? 0) / grandTotal) * 100))
             const isOpen = expanded === row.key
             const hitRate = cacheHitRate(counters)
+            const relative = formatRelative(relativeTime(row.lastAt), t)
             return (
               <div key={row.key} className={`tm-rank-item ${isOpen ? 'open' : ''}`} role="listitem">
                 <button
@@ -139,13 +161,21 @@ export const UsageRanking: FC<UsageRankingProps> = ({ snapshot, t }) => {
                   <span className="tm-rank-bar" style={{ width: `${share}%` }} aria-hidden="true" />
                   <span className={`tm-rank-no ${index < 3 ? 'top' : ''}`}>{index + 1}</span>
                   <span className="tm-rank-main">
-                    <span className="tm-rank-name" title={row.name}>
-                      {row.name}
+                    <span className="tm-rank-titlerow">
+                      <i
+                        className={`tm-rank-dot ${row.dotColor ? '' : 'empty'}`}
+                        style={row.dotColor ? { background: row.dotColor } : undefined}
+                        aria-hidden="true"
+                      />
+                      <span className="tm-rank-name" title={row.name}>
+                        {row.name}
+                      </span>
                     </span>
                     <span className="tm-rank-meta">
                       {row.sub && <span className="tm-rank-sub">{row.sub}</span>}
                       <span>{t('field.cacheHitRate')} {formatPercent(hitRate)}</span>
                       <span>{t('field.calls')} {formatNumber(counters.calls ?? 0)}</span>
+                      {relative && <span className="tm-rank-time">{relative}</span>}
                     </span>
                   </span>
                   <span className="tm-rank-value">

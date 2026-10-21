@@ -183,3 +183,23 @@ export function computeRhythm(snapshot: MetricsSnapshot, days: string[]): Rhythm
     longestStreak,
   }
 }
+
+export type RelativeUnit = 'now' | 'minute' | 'hour' | 'day'
+
+export interface RelativeTime {
+  unit: RelativeUnit
+  count: number
+}
+
+/** 把时间戳折算成「刚刚 / N 分钟前 / N 小时前 / N 天前」，用于会话榜单的活跃时间。 */
+export function relativeTime(timestamp: number | undefined, now = Date.now()): RelativeTime | null {
+  if (!timestamp || !Number.isFinite(timestamp)) return null
+  const diff = now - timestamp
+  if (diff < 0) return { unit: 'now', count: 0 }
+  const minutes = Math.floor(diff / 60_000)
+  if (minutes < 1) return { unit: 'now', count: 0 }
+  if (minutes < 60) return { unit: 'minute', count: minutes }
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return { unit: 'hour', count: hours }
+  return { unit: 'day', count: Math.floor(hours / 24) }
+}
