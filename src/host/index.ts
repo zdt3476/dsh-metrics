@@ -21,7 +21,7 @@ import { loadPricingTable } from './pricing'
 import { PluginUpdater } from './updater'
 
 export const name = 'dsh-metrics'
-export const version = '0.6.0'
+export const version = '1.0.0'
 export { Config } from './config'
 
 const PACKAGE_DIR = fileURLToPath(new URL('../../', import.meta.url))

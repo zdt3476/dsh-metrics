@@ -4,6 +4,27 @@
 
 ---
 
+## [1.0.0] - 2026-10-21
+
+首个稳定版本。至此统计口径、数据模型（`byDay` / 模型 × 日 / 小时桶 / 分钟桶）与页面结构均已收敛，后续版本以兼容演进为主。
+
+### ✨ 时间范围 (Ranges)
+
+- 支持 **今天 / 24 小时 / 3 天 / 7 天 / 30 天 / 全部** 六档范围，指标卡、成本、热力图随范围联动。
+- 账本新增 **72 小时的小时桶**（含按模型拆分），使「24 小时」这类滚动范围能算准 Token、调用、缓存率与成本，并提供逐小时成本曲线。
+
+### 🎨 可读性 (Readability)
+
+- 全局字号上调约 15%：主卡数值 28→36px、速率卡 22→27px、标题 13→15px、列表 11→12.5px、图表轴标签 9→11px、热力图格子 12→14px。
+- 热力图卡片补充使用节奏结论（活跃日均 / 峰值日 / 最长连续 / 高峰时段）。
+- 供应商列表限高可滚动，配合网格 `align-items: start`，消除左下大片留白。
+
+### 📦 发布 (Publishing)
+
+- 正式以 `@zdt3476/dsh-metrics` 发布到 npm，携带 `dsh-plugin` 关键词供 DSH 插件市场收录。
+
+---
+
 ## [0.6.0] - 2026-10-21
 
 ### 💵 成本核算 (Cost)
@@ -105,6 +126,7 @@
 
 ---
 
+[1.0.0]: https://github.com/zdt3476/dsh-metrics/releases/tag/v1.0.0
 [0.6.0]: https://github.com/zdt3476/dsh-metrics/releases/tag/v0.6.0
 [0.5.0]: https://github.com/zdt3476/dsh-metrics/releases/tag/v0.5.0
 [0.4.0]: https://github.com/zdt3476/dsh-metrics/releases/tag/v0.4.0
