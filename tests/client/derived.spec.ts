@@ -124,7 +124,8 @@ describe('peakHour', () => {
   })
 
   it('falls back to session timestamps when hourly data is missing', () => {
-    const at = new Date('2026-10-20T21:30:00+08:00').getTime()
+    // 用本地时间构造，避免 CI（UTC）与本地时区解析结果不同
+    const at = new Date(2026, 9, 20, 21, 30, 0).getTime()
     const snapshot = makeSnapshot({
       bySession: {
         a: { id: 'a', title: 'A', provider: 'p', model: 'm', firstAt: at, lastAt: at, counters: counters(1, 5) },
