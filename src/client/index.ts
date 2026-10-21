@@ -14,7 +14,7 @@ import './styles/base.css'
 import './styles/panel.css'
 import './styles/cards.css'
 import './styles/charts.css'
-import './styles/tables.css'
+import './styles/ranking.css'
 import './styles/overview.css'
 
 const NS = 'dsh-metrics'

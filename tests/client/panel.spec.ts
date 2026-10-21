@@ -2,7 +2,7 @@ import { createElement as h } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import { ActivityHeatmap } from '../../src/client/components/ActivityHeatmap'
-import { BreakdownTable } from '../../src/client/components/BreakdownTable'
+import { UsageRanking } from '../../src/client/components/UsageRanking'
 import { TrendChart } from '../../src/client/components/TrendChart'
 import { UsageSummary } from '../../src/client/components/UsageSummary'
 import { createTranslator } from '../../src/client/i18n'
@@ -162,23 +162,32 @@ describe('ActivityHeatmap', () => {
   })
 })
 
-describe('BreakdownTable', () => {
+describe('UsageRanking', () => {
   const zh = createTranslator('zh')
 
-  it('keeps four drill-down tabs and a rank column', () => {
-    const html = renderToStaticMarkup(h(BreakdownTable, { snapshot, t: zh }))
+  it('renders a data-bar leaderboard with four dimensions and sort switch', () => {
+    const html = renderToStaticMarkup(h(UsageRanking, { snapshot, t: zh }))
+
     expect(html).toContain('按模型')
     expect(html).toContain('按供应商')
     expect(html).toContain('按项目')
     expect(html).toContain('按会话')
     expect(html).not.toContain('按来源')
     expect(html).not.toContain('按账号')
-    // 行内序号徽标 + 独立占比列
-    expect(html).toContain('tm-row-rank')
-    expect(html).toContain('tm-col-share')
-    expect(html).toContain('tm-share-fill')
-    // 思考用量全为 0 时整列隐藏
-    expect(html).not.toContain('>思考<')
+
+    // 排序不再是点表头，而是工具栏三档切换
+    expect(html).toContain('tm-sort-group')
+    expect(html).toContain('按用量')
+    expect(html).toContain('按调用')
+    expect(html).toContain('按缓存率')
+
+    // 占比以整行背景条表达，并带百分比数值
+    expect(html).toContain('tm-rank-bar')
+    expect(html).toContain('tm-rank-share')
+    expect(html).toContain('aria-expanded')
+
+    // 明细默认收起，不占常驻列宽
+    expect(html).not.toContain('tm-rank-detail')
   })
 })
 

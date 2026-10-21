@@ -3,7 +3,7 @@ import type { MetricsSnapshot, UpdateCheckResult } from '../../shared/types'
 import type { TimeRange } from '../derived'
 import { AccountCard } from './AccountCard'
 import { ActivityHeatmap } from './ActivityHeatmap'
-import { BreakdownTable } from './BreakdownTable'
+import { UsageRanking } from './UsageRanking'
 import { TrendChart } from './TrendChart'
 import { UpdateBanner } from './UpdateBanner'
 import { UsageSummary } from './UsageSummary'
@@ -170,7 +170,7 @@ export const TokenUsagePanel: FC<TokenUsagePanelProps> = ({ t }) => {
 
       <TrendChart trend={snapshot.trend} modelTrend={snapshot.modelTrend} t={t} />
 
-      <BreakdownTable snapshot={snapshot} t={t} />
+      <UsageRanking snapshot={snapshot} t={t} />
 
       <div className="tm-footnote">
         <div>
