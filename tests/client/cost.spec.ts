@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { costOf, normalizeModelName } from '../../src/shared/utils'
+import { costOf, modelNameCandidates, normalizeModelName, resolveModelKey } from '../../src/shared/utils'
 import { computeRangeCost, dailyCostSeries } from '../../src/client/derived'
 import type { MetricsSnapshot, ModelPrice } from '../../src/shared/types'
 import { emptyCounters } from '../../src/shared/utils'
@@ -60,10 +60,42 @@ function makeSnapshot(overrides: Partial<MetricsSnapshot> = {}): MetricsSnapshot
 
 describe('normalizeModelName', () => {
   it('strips vendor prefix, variant suffix and date suffix', () => {
-    expect(normalizeModelName('deepseek/deepseek-v4.1-flash-1017')).toBe('deepseek-v4.1-flash')
-    expect(normalizeModelName('google/gemini-3.8-flash:batch')).toBe('gemini-3.8-flash')
-    expect(normalizeModelName('Codex/gpt-6.1-sol')).toBe('gpt-6.1-sol')
-    expect(normalizeModelName('  GEMINI-3.8-FLASH  ')).toBe('gemini-3.8-flash')
+    expect(normalizeModelName('deepseek/deepseek-v4.1-flash-1017')).toBe('deepseek-v4-1-flash')
+    expect(normalizeModelName('google/gemini-3.8-flash:batch')).toBe('gemini-3-8-flash')
+    expect(normalizeModelName('Codex/gpt-6.1-sol')).toBe('gpt-6-1-sol')
+    expect(normalizeModelName('  GEMINI-3.8-FLASH  ')).toBe('gemini-3-8-flash')
+  })
+
+  it('folds dots and underscores so 5.5 and 5-5 converge', () => {
+    expect(normalizeModelName('anthropic/claude-opus-5.5')).toBe(normalizeModelName('claude-opus-5-5'))
+    expect(normalizeModelName('a/b_model')).toBe('b-model')
+  })
+})
+
+describe('modelNameCandidates', () => {
+  it('progressively trims trailing qualifiers', () => {
+    expect(modelNameCandidates('gemini-3-8-flash-high')).toEqual([
+      'gemini-3-8-flash-high',
+      'gemini-3-8-flash',
+      'gemini-3-8',
+      'gemini-3',
+    ])
+  })
+
+  it('never trims down to a single segment', () => {
+    expect(modelNameCandidates('solo')).toEqual(['solo'])
+  })
+})
+
+describe('resolveModelKey', () => {
+  const table = { 'gemini-3-8-flash': PRICE }
+
+  it('falls back to the trimmed alias', () => {
+    expect(resolveModelKey(table, 'gemini-3.8-flash-tiered')).toBe('gemini-3-8-flash')
+  })
+
+  it('returns null when nothing matches', () => {
+    expect(resolveModelKey(table, 'totally-unknown-model')).toBeNull()
   })
 })
 
@@ -85,7 +117,7 @@ describe('costOf', () => {
 describe('computeRangeCost', () => {
   it('sums per-model cost inside the range only', () => {
     const snapshot = makeSnapshot({
-      pricing: { 'deepseek-v4.1': PRICE },
+      pricing: { 'deepseek-v4-1': PRICE },
       byModelDay: {
         'deepseek-v4.1': {
           '2026-10-20': counters(1000, 1000),
@@ -115,7 +147,7 @@ describe('computeRangeCost', () => {
 
   it('matches prices through normalized model names', () => {
     const snapshot = makeSnapshot({
-      pricing: { 'gpt-6.1-sol': PRICE },
+      pricing: { 'gpt-6-1-sol': PRICE },
       byModelDay: { 'Codex/gpt-6.1-sol': { '2026-10-21': counters(1000, 0) } },
     })
     expect(computeRangeCost(snapshot, ['2026-10-21']).total).toBeCloseTo(0.001, 10)
@@ -125,7 +157,7 @@ describe('computeRangeCost', () => {
 describe('dailyCostSeries', () => {
   it('returns one value per requested day', () => {
     const snapshot = makeSnapshot({
-      pricing: { 'deepseek-v4.1': PRICE },
+      pricing: { 'deepseek-v4-1': PRICE },
       byModelDay: { 'deepseek-v4.1': { '2026-10-21': counters(1000, 0) } },
     })
     expect(dailyCostSeries(snapshot, ['2026-10-20', '2026-10-21'])).toEqual([0, 0.001])

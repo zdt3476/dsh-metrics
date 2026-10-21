@@ -86,8 +86,8 @@ export function sessionOrigin(header?: {
 /**
  * 归一化模型名，用于把账本里的调用名匹配到价格表。
  *
- * 去掉厂商标识、`:free` 之类变体标记与日期后缀，两侧共用同一规则，
- * 避免主客端各写一份导致匹配结果不一致。
+ * 统一处理四类差异：厂商标识（`deepseek/xxx`）、变体标记（`:free`）、
+ * 日期快照后缀（`-1017`）以及点号与短横线混用（`5.5` vs `5-5`）。
  */
 export function normalizeModelName(raw: string): string {
   let name = raw.trim().toLowerCase()
@@ -95,7 +95,27 @@ export function normalizeModelName(raw: string): string {
   if (slash >= 0) name = name.slice(slash + 1)
   name = name.replace(/:(free|batch|extended|thinking)$/g, '')
   name = name.replace(/-\d{4}$/, '')
-  return name
+  return name.replace(/[._]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')
+}
+
+/** 逐级去掉尾部的档位词，用于匹配本地别名（如 `-high` / `-tiered`）。 */
+export function modelNameCandidates(raw: string): string[] {
+  const base = normalizeModelName(raw)
+  const candidates = [base]
+  const parts = base.split('-')
+  // 最多回退三段，避免把真实的版本号也砍掉
+  for (let trim = 1; trim <= 3 && parts.length - trim > 1; trim += 1) {
+    candidates.push(parts.slice(0, parts.length - trim).join('-'))
+  }
+  return candidates
+}
+
+/** 依次尝试候选名，返回第一个命中价格的模型名。 */
+export function resolveModelKey<T>(table: Record<string, T>, raw: string): string | null {
+  for (const candidate of modelNameCandidates(raw)) {
+    if (table[candidate] !== undefined) return candidate
+  }
+  return null
 }
 
 /** 按单价把一组计数折算成金额（美元）。价格缺失时返回 null，不猜测。 */

@@ -1,7 +1,7 @@
 import { useMemo, type FC } from 'react'
 import { formatNumber, formatPercent, formatTokens } from '../../shared/format'
 import type { MetricsSnapshot } from '../../shared/types'
-import { costOf, normalizeModelName } from '../../shared/utils'
+import { costOf, resolveModelKey } from '../../shared/utils'
 import { colorForName } from '../colors'
 import { formatCurrency } from '../../shared/format'
 
@@ -28,7 +28,8 @@ export const ProviderList: FC<ProviderListProps> = ({ snapshot, t }) => {
       for (const [modelKey, counters] of Object.entries(snapshot.byModel)) {
         const [provider] = modelKey.split('/')
         const modelName = modelKey.slice(provider.length + 1)
-        const price = snapshot.pricing[normalizeModelName(modelName)]
+        const priceKey = resolveModelKey(snapshot.pricing, modelName)
+        const price = priceKey ? snapshot.pricing[priceKey] : undefined
         if (!price) continue
         costByProvider.set(provider, (costByProvider.get(provider) ?? 0) + costOf(counters, price))
       }

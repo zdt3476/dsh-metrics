@@ -52,7 +52,7 @@ const snapshot: MetricsSnapshot = {
     10: counters(50_000, 300),
   },
   pricing: {
-    'deepseek-v4.1': { input: 0.0000003, output: 0.0000012, cacheRead: 0.000000006, cacheWrite: 0.0000003, reasoning: 0.0000012 },
+    'deepseek-v4-1': { input: 0.0000003, output: 0.0000012, cacheRead: 0.000000006, cacheWrite: 0.0000003, reasoning: 0.0000012 },
   },
   pricingFetchedAt: today,
   rate: { windowMinutes: 60, calls: 120, tokens: 900_000 },

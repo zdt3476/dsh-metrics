@@ -1,7 +1,7 @@
 import { useMemo, useState, type FC } from 'react'
 import { formatCurrency, formatNumber, formatPercent, formatTokens } from '../../shared/format'
 import type { MetricsSnapshot, TokenCounters } from '../../shared/types'
-import { costOf, normalizeModelName } from '../../shared/utils'
+import { costOf, resolveModelKey } from '../../shared/utils'
 import { colorForName } from '../colors'
 import { DonutChart } from './DonutChart'
 
@@ -33,7 +33,8 @@ export const UsageRanking: FC<UsageRankingProps> = ({ snapshot, t }) => {
     const restValue = tail.reduce((acc, [, counters]) => acc + valueOf(counters), 0)
 
     const costOfModel = (name: string, counters: TokenCounters): number | null => {
-      const price = snapshot.pricing[normalizeModelName(name)]
+      const priceKey = resolveModelKey(snapshot.pricing, name)
+      const price = priceKey ? snapshot.pricing[priceKey] : undefined
       return price ? costOf(counters, price) : null
     }
 

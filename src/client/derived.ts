@@ -5,7 +5,7 @@
  */
 
 import type { MetricsSnapshot } from '../shared/types'
-import { cacheHitRate, costOf, emptyCounters, mergeCounters, normalizeModelName } from '../shared/utils'
+import { cacheHitRate, costOf, emptyCounters, mergeCounters, resolveModelKey } from '../shared/utils'
 import { dayKey } from '../shared/utils'
 
 export type TimeRange = 'all' | '30d' | '7d'
@@ -223,7 +223,8 @@ export function computeRangeCost(snapshot: MetricsSnapshot, days: string[]): Cos
   const missing: string[] = []
 
   for (const [model, dayMap] of Object.entries(snapshot.byModelDay ?? {})) {
-    const price = snapshot.pricing[normalizeModelName(model)]
+    const priceKey = resolveModelKey(snapshot.pricing, model)
+    const price = priceKey ? snapshot.pricing[priceKey] : undefined
     let tokens = 0
     let cost = 0
     for (const [day, counters] of Object.entries(dayMap)) {
@@ -248,7 +249,8 @@ export function dailyCostSeries(snapshot: MetricsSnapshot, days: string[]): numb
   return days.map(day => {
     let cost = 0
     for (const [model, dayMap] of Object.entries(snapshot.byModelDay ?? {})) {
-      const price = snapshot.pricing[normalizeModelName(model)]
+      const priceKey = resolveModelKey(snapshot.pricing, model)
+    const price = priceKey ? snapshot.pricing[priceKey] : undefined
       const counters = dayMap[day]
       if (!price || !counters) continue
       cost += costOf(counters, price)

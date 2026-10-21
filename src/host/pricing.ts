@@ -49,8 +49,9 @@ function toPrice(pricing: Record<string, string | number | undefined> | undefine
 }
 
 function buildTable(models: RawModel[]): PricingTable {
-  const table: PricingTable = {}
-  const ambiguous = new Set<string>()
+  // 同一归一化名可能有多个版本，先按「与归一化名相等程度」排序，再取最优者，
+  // 而不是一遇分歧就整条丢弃——否则绝大多数常见模型都会拿不到价格。
+  const ranked = new Map<string, Array<{ id: string; score: number; price: ModelPrice }>>()
 
   for (const model of models) {
     if (!model.id) continue
@@ -58,20 +59,20 @@ function buildTable(models: RawModel[]): PricingTable {
     if (!price) continue
 
     const key = normalizeModelName(model.id)
-    const existing = table[key]
-    if (existing) {
-      // 同名不同厂/不同版本：两侧价格一致才保留，否则视为无法确定
-      const same =
-        existing.input === price.input &&
-        existing.output === price.output &&
-        existing.cacheRead === price.cacheRead
-      if (!same) ambiguous.add(key)
-      continue
-    }
-    table[key] = price
+    const tail = model.id.toLowerCase().slice(model.id.lastIndexOf('/') + 1)
+    // 分数越小越可信：0 表示去掉厂商后与归一化名完全一致
+    const score = tail === key ? 0 : tail.replace(/:(free|batch|extended|thinking)$/g, '') === key ? 1 : 2
+
+    const bucket = ranked.get(key) ?? []
+    bucket.push({ id: model.id, score, price })
+    ranked.set(key, bucket)
   }
 
-  for (const key of ambiguous) delete table[key]
+  const table: PricingTable = {}
+  for (const [key, bucket] of ranked) {
+    bucket.sort((a, b) => a.score - b.score || a.id.localeCompare(b.id))
+    table[key] = bucket[0].price
+  }
   return table
 }
 
