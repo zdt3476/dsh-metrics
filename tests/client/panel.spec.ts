@@ -127,6 +127,14 @@ describe('UsageSummary', () => {
     expect(html).toContain('seg-input')
   })
 
+  it('renders sparklines for metrics that have a daily series', () => {
+    const html = renderToStaticMarkup(
+      h(UsageSummary, { snapshot, range: 'all' as const, onRangeChange: () => {}, t: zh }),
+    )
+    // 主指标 + 缓存率 + 调用均有日级序列，其余无序列的格子不画
+    expect(html.match(/class="tm-spark"/g)?.length).toBe(3)
+  })
+
   it('exposes the range switch as the single source of range', () => {
     const html = renderToStaticMarkup(
       h(UsageSummary, { snapshot, range: '7d' as const, onRangeChange: () => {}, t: zh }),

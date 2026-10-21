@@ -108,6 +108,23 @@
   color: var(--tm-text);
 }
 
+/* 迷你趋势线：只占 18px 高，宽度随容器伸缩 */
+.tm-spark {
+  display: block;
+  width: 100%;
+  height: 18px;
+  margin-top: 2px;
+}
+
+.tm-summary-primary .tm-spark {
+  height: 30px;
+  margin-top: 4px;
+}
+
+.tm-summary-stat .tm-spark {
+  height: 16px;
+}
+
 .tm-summary-primary-meta {
   display: flex;
   gap: 14px;
