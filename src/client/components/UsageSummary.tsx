@@ -1,7 +1,15 @@
 import { useMemo, type FC } from 'react'
 import { formatCurrency, formatNumber, formatPercent, formatTokens } from '../../shared/format'
 import type { MetricsSnapshot } from '../../shared/types'
-import { computeRangeCost, computeRangeStats, dailyCostSeries, rangeDayKeys, type TimeRange } from '../derived'
+import {
+  computeHourlyCost,
+  computeRangeCost,
+  computeRangeStats,
+  dailyCostSeries,
+  hourlyCostSeries,
+  rangeDayKeys,
+  type TimeRange,
+} from '../derived'
 import { MetricTile } from './MetricTile'
 
 export interface UsageSummaryProps {
@@ -11,12 +19,15 @@ export interface UsageSummaryProps {
   t: (key: string, params?: Record<string, string | number>) => string
 }
 
-const RANGES: TimeRange[] = ['all', '30d', '7d']
+const RANGES: TimeRange[] = ['today', '24h', '3d', '7d', '30d', 'all']
 
 const RANGE_LABEL: Record<TimeRange, string> = {
-  all: 'range.all',
-  '30d': 'range.30d',
+  today: 'range.today',
+  '24h': 'range.24h',
+  '3d': 'range.3d',
   '7d': 'range.7d',
+  '30d': 'range.30d',
+  all: 'range.all',
 }
 
 /** 速率类数值：小数量保留两位小数，大数量走紧凑写法。 */
@@ -48,6 +59,12 @@ export const UsageSummary: FC<UsageSummaryProps> = ({ snapshot, range, onRangeCh
   const tpm = snapshot.rate.tokens / snapshot.rate.windowMinutes
 
   const cost = useMemo(() => {
+    if (range === '24h') {
+      return {
+        summary: computeHourlyCost(snapshot),
+        series: hourlyCostSeries(snapshot),
+      }
+    }
     const days = rangeDayKeys(snapshot, range)
     return {
       summary: computeRangeCost(snapshot, days),

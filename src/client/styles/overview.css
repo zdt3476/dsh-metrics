@@ -3,7 +3,7 @@
 .tm-metrics {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .tm-metrics-head {
@@ -15,7 +15,7 @@
 
 .tm-metrics-title {
   margin: 0;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--tm-text);
   letter-spacing: 0.2px;
@@ -31,12 +31,12 @@
 }
 
 .tm-range-btn {
-  padding: 3px 10px;
+  padding: 4px 12px;
   border: none;
   border-radius: 4px;
   background: transparent;
   color: var(--tm-text-muted);
-  font-size: 11px;
+  font-size: 12.5px;
   font-weight: 500;
   cursor: pointer;
   transition: background 0.12s ease, color 0.12s ease;
@@ -57,7 +57,7 @@
 .tm-metrics-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
+  gap: 12px;
 }
 
 @media (max-width: 900px) {
@@ -76,10 +76,10 @@
   background: var(--tm-bg-card);
   border: 1px solid var(--tm-border);
   border-radius: var(--tm-radius);
-  padding: 14px 16px;
+  padding: 16px 18px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   min-width: 0;
 }
 
@@ -100,20 +100,20 @@
 }
 
 .tm-tile-label {
-  font-size: 11px;
+  font-size: 12.5px;
   color: var(--tm-text-muted);
   font-weight: 500;
 }
 
 .tm-tile-hint {
-  font-size: 10px;
+  font-size: 11.5px;
   color: var(--tm-text-muted);
   opacity: 0.7;
   cursor: help;
 }
 
 .tm-tile-value {
-  font-size: 22px;
+  font-size: 27px;
   font-weight: 700;
   font-family: var(--tm-font-mono);
   letter-spacing: -0.6px;
@@ -122,18 +122,18 @@
 }
 
 .tm-tile-large .tm-tile-value {
-  font-size: 28px;
+  font-size: 36px;
   letter-spacing: -1px;
 }
 
 .tm-tile-sub {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   flex-wrap: wrap;
-  font-size: 11px;
+  font-size: 12.5px;
   color: var(--tm-text-muted);
-  min-height: 16px;
+  min-height: 18px;
 }
 
 .tm-tile-sub b {
@@ -175,19 +175,20 @@
 .tm-spark {
   display: block;
   width: 100%;
-  height: 22px;
-  margin-top: 2px;
+  height: 26px;
+  margin-top: 3px;
 }
 
 .tm-tile-large .tm-spark {
-  height: 46px;
+  height: 54px;
 }
 
 /* 底部两栏：趋势 + 模型用量 */
 .tm-bottom-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
-  gap: 10px;
+  gap: 12px;
+  align-items: start;
 }
 
 @media (max-width: 980px) {
@@ -205,7 +206,7 @@
 
 .tm-card-title {
   margin: 0;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--tm-text);
 }
@@ -225,9 +226,9 @@
   justify-content: space-between;
   gap: 8px;
   flex-wrap: wrap;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--tm-text-muted);
-  padding-top: 4px;
+  padding-top: 6px;
 }
 
 .tm-footnote code {
@@ -252,13 +253,42 @@
 }
 
 .tm-activity-hint {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--tm-text-muted);
 }
 
 .tm-heatmap-scroll {
   overflow-x: auto;
   padding-bottom: 2px;
+}
+
+/* 使用节奏：把热力图右侧的空间用结论填满，避免整块留白 */
+.tm-rhythm {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  border-top: 1px solid var(--tm-border);
+  padding-top: 12px;
+}
+
+@media (max-width: 720px) {
+  .tm-rhythm {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.tm-rhythm dt {
+  font-size: 11.5px;
+  color: var(--tm-text-muted);
+}
+
+.tm-rhythm dd {
+  margin: 2px 0 0;
+  font-family: var(--tm-font-mono);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--tm-text);
 }
 
 .tm-heatmap-months {
@@ -268,7 +298,7 @@
 }
 
 .tm-heatmap-month {
-  font-size: 10px;
+  font-size: 11.5px;
   color: var(--tm-text-muted);
   white-space: nowrap;
 }
@@ -287,9 +317,9 @@
 }
 
 .tm-heatmap-weekdays span {
-  height: 12px;
-  line-height: 12px;
-  font-size: 10px;
+  height: 14px;
+  line-height: 14px;
+  font-size: 11.5px;
   color: var(--tm-text-muted);
 }
 
@@ -305,8 +335,8 @@
 }
 
 .tm-heatmap-cell {
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   border-radius: 2px;
   display: block;
   background: var(--tm-heatmap-0, rgba(148, 163, 184, 0.18));
@@ -325,8 +355,8 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 3px;
-  font-size: 10px;
+  gap: 4px;
+  font-size: 11.5px;
   color: var(--tm-text-muted);
 }
 
@@ -342,15 +372,27 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
+  max-height: 300px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.tm-provider-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.tm-provider-list::-webkit-scrollbar-thumb {
+  background: var(--tm-border);
+  border-radius: 3px;
 }
 
 .tm-provider-list li {
   display: grid;
   grid-template-columns: 7px minmax(0, 1fr) auto auto auto auto;
   align-items: center;
-  gap: 10px;
-  padding: 6px 0;
-  font-size: 11px;
+  gap: 12px;
+  padding: 9px 0;
+  font-size: 12.5px;
   color: var(--tm-text-muted);
   border-bottom: 1px solid var(--tm-border);
 }

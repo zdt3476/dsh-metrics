@@ -16,6 +16,15 @@ export interface ModelPrice {
 /** 归一化模型名 → 单价。 */
 export type PricingTable = Record<string, ModelPrice>
 
+/** 按小时聚合的近期用量；用于「24 小时」这类跨天的滚动范围。 */
+export interface HourBucket {
+  /** epoch 小时序号：Math.floor(时间戳 / 3600000)。 */
+  hour: number
+  counters: TokenCounters
+  /** 按模型拆分，便于在该范围内按各自单价计费。 */
+  byModel: Record<string, TokenCounters>
+}
+
 /** 最近一分钟粒度的速率快照。 */
 export interface RateSnapshot {
   windowMinutes: number
@@ -166,6 +175,8 @@ export interface MetricsSnapshot {
   pricingFetchedAt: number | null
   /** 最近一分钟粒度的速率，用于真实的 RPM / TPM。 */
   rate: RateSnapshot
+  /** 最近 72 小时的小时桶，支撑滚动 24 小时范围。 */
+  recentHours: HourBucket[]
   failedAttempts: FailedAttemptsRecord | null
   accounts: Record<string, TokenCountersWithRate>
   currentAccount: AccountSnapshot | null
@@ -210,6 +221,8 @@ export interface StoreData {
   byHour?: Record<number, TokenCounters>
   /** 最近若干分钟的调用与 Token 数，用于真实 RPM/TPM。 */
   recentMinutes?: Array<{ minute: number; calls: number; tokens: number }>
+  /** 最近 72 小时的小时桶，用于滚动 24 小时范围。 */
+  recentHours?: HourBucket[]
   failedAttempts: FailedAttemptsRecord
   accounts: Record<string, TokenCounters>
   currentAccount: AccountSnapshot | null

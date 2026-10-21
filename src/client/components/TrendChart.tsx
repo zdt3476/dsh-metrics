@@ -123,7 +123,7 @@ export const TrendChart: FC<TrendChartProps> = ({ trend, modelTrend, t }) => {
                   strokeDasharray="4 4"
                   strokeWidth="0.8"
                 />
-                <text x={PADDING.left - 6} y={y + 3} textAnchor="end" fontSize="9" fill="var(--tm-text-muted)">
+                <text x={PADDING.left - 6} y={y + 3} textAnchor="end" fontSize="11" fill="var(--tm-text-muted)">
                   {formatTokens(max * ratio)}
                 </text>
               </g>
@@ -145,7 +145,7 @@ export const TrendChart: FC<TrendChartProps> = ({ trend, modelTrend, t }) => {
           {days.map((day, index) => {
             if (index % labelStep !== 0 && index !== days.length - 1) return null
             return (
-              <text key={`x-${day}`} x={xOf(index)} y={VIEW_HEIGHT - 5} textAnchor="middle" fontSize="9" fill="var(--tm-text-muted)">
+              <text key={`x-${day}`} x={xOf(index)} y={VIEW_HEIGHT - 5} textAnchor="middle" fontSize="11" fill="var(--tm-text-muted)">
                 {day.slice(5)}
               </text>
             )

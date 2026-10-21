@@ -3,6 +3,7 @@ import type {
   FailedAttemptsRecord,
   MetricsSnapshot,
   ModelTrend,
+  HourBucket,
   PluginConfig,
   PricingTable,
   RateSnapshot,
@@ -35,6 +36,8 @@ export interface LoggerLike {
 const RATE_RETENTION_MINUTES = 90
 /** RPM / TPM 的统计窗口。 */
 const RATE_WINDOW_MINUTES = 60
+/** 小时桶保留时长：覆盖滚动 24 小时并留出余量。 */
+const HOUR_RETENTION_HOURS = 72
 
 export class TokenTracker {
   store: StoreData
@@ -221,7 +224,21 @@ export class TokenTracker {
     const cutoffMinute = minuteKey - RATE_RETENTION_MINUTES
     this.store.recentMinutes = this.store.recentMinutes.filter(item => item.minute >= cutoffMinute)
 
-    // 13. By Hour
+    // 13. 小时桶：支撑滚动 24 小时范围，按模型拆分以便计费
+    const hourKey = Math.floor(now / 3_600_000)
+    this.store.recentHours ??= []
+    let hourBucket = this.store.recentHours.find(item => item.hour === hourKey)
+    if (!hourBucket) {
+      hourBucket = { hour: hourKey, counters: emptyCounters(), byModel: {} }
+      this.store.recentHours.push(hourBucket)
+    }
+    addUsage(hourBucket.counters, usage)
+    hourBucket.byModel[modelKey] ??= emptyCounters()
+    addUsage(hourBucket.byModel[modelKey], usage)
+    const hourCutoff = hourKey - HOUR_RETENTION_HOURS
+    this.store.recentHours = this.store.recentHours.filter(item => item.hour >= hourCutoff)
+
+    // 14. By Hour
     const hour = new Date(now).getHours()
     this.store.byHour ??= {}
     this.store.byHour[hour] ??= emptyCounters()
@@ -332,6 +349,7 @@ export class TokenTracker {
     this.store.byOrigin = {}
     this.store.byHour = {}
     this.store.recentMinutes = []
+    this.store.recentHours = []
     this.store.accounts = {}
     this.store.failedAttempts = { count: 0, inputTokens: 0, outputTokens: 0, totalTokens: 0, billable: 0 }
     this.dirty = true
@@ -519,6 +537,7 @@ export class TokenTracker {
       pricing: { ...this.pricing },
       pricingFetchedAt: this.pricingFetchedAt,
       rate: this.buildRate(now),
+      recentHours: (this.store.recentHours ?? []).map(item => ({ hour: item.hour, counters: item.counters, byModel: item.byModel })),
       failedAttempts: this.config.trackFailedAttempts ? { ...this.store.failedAttempts } : null,
       accounts: Object.fromEntries(
         Object.entries(this.store.accounts).map(([id, entry]) => [id, withRate(entry)]),

@@ -74,6 +74,7 @@ export function emptyStore(buildId: string): StoreData {
     byOrigin: {},
     byHour: {},
     recentMinutes: [],
+    recentHours: [],
     failedAttempts: { count: 0, inputTokens: 0, outputTokens: 0, totalTokens: 0, billable: 0 },
     accounts: {},
     currentAccount: null,
@@ -106,6 +107,7 @@ export function loadStore(
       parsed.byOrigin ??= {}
       parsed.byHour ??= {}
       parsed.recentMinutes ??= []
+      parsed.recentHours ??= []
       parsed.failedAttempts ??= { count: 0, inputTokens: 0, outputTokens: 0, totalTokens: 0, billable: 0 }
       parsed.accounts ??= {}
       parsed.currentAccount ??= null

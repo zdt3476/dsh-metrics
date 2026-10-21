@@ -4,13 +4,14 @@
  * 这些计算同时被总览卡片与活跃度热力图使用，集中在此以保证两者口径一致。
  */
 
-import type { MetricsSnapshot } from '../shared/types'
+import type { MetricsSnapshot, TokenCounters } from '../shared/types'
 import { cacheHitRate, costOf, emptyCounters, mergeCounters, resolveModelKey } from '../shared/utils'
 import { dayKey } from '../shared/utils'
 
-export type TimeRange = 'all' | '30d' | '7d'
+export type TimeRange = 'today' | '24h' | '3d' | '7d' | '30d' | 'all'
 
 const DAY_MS = 86_400_000
+const HOUR_MS = 3_600_000
 /** 「全部」范围下热力图至少铺满的周长，避免数据稀疏时网格塌缩成一列。 */
 const MIN_ALL_SPAN_DAYS = 168
 
@@ -32,11 +33,23 @@ export interface CompositionPart {
   value: number
 }
 
+/** 各范围覆盖的自然日数量；'24h' 与 'all' 由调用方另行处理。 */
+const RANGE_DAYS: Record<Exclude<TimeRange, 'all' | '24h'>, number> = {
+  today: 1,
+  '3d': 3,
+  '7d': 7,
+  '30d': 30,
+}
+
 /** 生成覆盖该范围的日期序列（升序，最后一项为今天）。 */
 export function rangeDayKeys(snapshot: MetricsSnapshot, range: TimeRange, now = Date.now()): string[] {
   const today = dayKey(now)
+  if (range === '24h') {
+    // 滚动窗口可能横跨两天，按自然日展开后再由区间过滤兜底
+    return [dayKey(now - DAY_MS), today]
+  }
   if (range !== 'all') {
-    const span = range === '7d' ? 7 : 30
+    const span = RANGE_DAYS[range]
     return Array.from({ length: span }, (_, i) => dayKey(now - (span - 1 - i) * DAY_MS))
   }
 
@@ -69,6 +82,36 @@ export function computeRangeStats(
     }
   }
 
+  if (range === '24h') {
+    const acc24 = emptyCounters()
+    const windowStart = Math.floor((now - 24 * HOUR_MS) / HOUR_MS)
+    const activeDayKeys = new Set<string>()
+    for (const bucket of snapshot.recentHours) {
+      if (bucket.hour < windowStart) continue
+      mergeCounters(acc24, bucket.counters)
+      if ((bucket.counters.totalTokens ?? 0) > 0) {
+        activeDayKeys.add(dayKey(bucket.hour * HOUR_MS))
+      }
+    }
+    const sessionCutoff = now - 24 * HOUR_MS
+    let sessionCount24 = 0
+    for (const session of Object.values(snapshot.bySession)) {
+      if ((session.lastAt ?? 0) >= sessionCutoff || (session.firstAt ?? 0) >= sessionCutoff) sessionCount24 += 1
+    }
+    return {
+      totalTokens: acc24.totalTokens,
+      calls: acc24.calls,
+      activeDays: activeDayKeys.size,
+      sessionCount: sessionCount24,
+      cacheHitRate: cacheHitRate(acc24),
+      inputTokens: acc24.inputTokens,
+      outputTokens: acc24.outputTokens,
+      cacheReadTokens: acc24.cacheReadTokens,
+      cacheWriteTokens: acc24.cacheWriteTokens,
+      reasoningTokens: acc24.reasoningTokens,
+    }
+  }
+
   const acc = emptyCounters()
   let activeDays = 0
   for (const day of rangeDayKeys(snapshot, range, now)) {
@@ -78,7 +121,9 @@ export function computeRangeStats(
     if ((counters.totalTokens ?? 0) > 0) activeDays += 1
   }
 
-  const cutoff = now - (range === '7d' ? 7 : 30) * DAY_MS
+  const cutoff = range === 'today'
+    ? new Date(`${dayKey(now)}T00:00:00`).getTime()
+    : now - RANGE_DAYS[range] * DAY_MS
   let sessionCount = 0
   for (const session of Object.values(snapshot.bySession)) {
     if ((session.lastAt ?? 0) >= cutoff || (session.firstAt ?? 0) >= cutoff) {
@@ -257,4 +302,60 @@ export function dailyCostSeries(snapshot: MetricsSnapshot, days: string[]): numb
     }
     return cost
   })
+}
+
+/** 滚动 24 小时窗口内的小时桶。 */
+function windowedHours(snapshot: MetricsSnapshot, now = Date.now()) {
+  const windowStart = Math.floor((now - 24 * HOUR_MS) / HOUR_MS)
+  return snapshot.recentHours.filter(bucket => bucket.hour >= windowStart)
+}
+
+/** 滚动 24 小时的成本：用小时桶里的按模型拆分，逐模型计价。 */
+export function computeHourlyCost(snapshot: MetricsSnapshot, now = Date.now()): CostSummary {
+  let total = 0
+  let priced = false
+  const missing: string[] = []
+  const modelTotals = new Map<string, TokenCounters>()
+
+  for (const bucket of windowedHours(snapshot, now)) {
+    for (const [model, counters] of Object.entries(bucket.byModel)) {
+      const acc = modelTotals.get(model) ?? emptyCounters()
+      mergeCounters(acc, counters)
+      modelTotals.set(model, acc)
+    }
+  }
+
+  for (const [model, counters] of modelTotals) {
+    if ((counters.totalTokens ?? 0) <= 0) continue
+    const priceKey = resolveModelKey(snapshot.pricing, model)
+    const price = priceKey ? snapshot.pricing[priceKey] : undefined
+    if (!price) {
+      missing.push(model)
+      continue
+    }
+    priced = true
+    total += costOf(counters, price)
+  }
+
+  return { total, unavailable: !priced, missing }
+}
+
+/** 滚动 24 小时的逐小时成本序列，用于成本迷你趋势线。 */
+export function hourlyCostSeries(snapshot: MetricsSnapshot, now = Date.now()): number[] {
+  const currentHour = Math.floor(now / HOUR_MS)
+  const start = currentHour - 23
+  const byHour = new Map<number, number>()
+
+  for (const bucket of snapshot.recentHours) {
+    if (bucket.hour < start) continue
+    let cost = 0
+    for (const [model, counters] of Object.entries(bucket.byModel)) {
+      const priceKey = resolveModelKey(snapshot.pricing, model)
+      const price = priceKey ? snapshot.pricing[priceKey] : undefined
+      if (price) cost += costOf(counters, price)
+    }
+    byHour.set(bucket.hour, cost)
+  }
+
+  return Array.from({ length: 24 }, (_, index) => byHour.get(start + index) ?? 0)
 }

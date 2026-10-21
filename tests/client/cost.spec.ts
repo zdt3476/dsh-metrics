@@ -43,6 +43,7 @@ function makeSnapshot(overrides: Partial<MetricsSnapshot> = {}): MetricsSnapshot
     pricing: {},
     pricingFetchedAt: null,
     rate: { windowMinutes: 60, calls: 0, tokens: 0 },
+    recentHours: [],
     failedAttempts: null,
     accounts: {},
     currentAccount: null,

@@ -42,6 +42,7 @@ function makeSnapshot(partial: Partial<MetricsSnapshot> = {}): MetricsSnapshot {
     pricing: {},
     pricingFetchedAt: null,
     rate: { windowMinutes: 60, calls: 0, tokens: 0 },
+    recentHours: [],
     byModelDay: {},
     modelTrend: { days: [], series: [] },
     byProvider: {},

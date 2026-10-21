@@ -56,6 +56,7 @@ const snapshot: MetricsSnapshot = {
   },
   pricingFetchedAt: today,
   rate: { windowMinutes: 60, calls: 120, tokens: 900_000 },
+  recentHours: [],
   byModelDay: {
     'deepseek-v4.1': {
       [key(0)]: { ...counters(100_000, 400, 60_000), cacheHitRate: 0.5 },

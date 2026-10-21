@@ -1,7 +1,7 @@
 import { useMemo, type FC } from 'react'
 import { formatTokens } from '../../shared/format'
 import type { MetricsSnapshot } from '../../shared/types'
-import { rangeDayKeys, type TimeRange } from '../derived'
+import { computeRhythm, formatHour, peakHour, rangeDayKeys, type TimeRange } from '../derived'
 
 export interface ActivityHeatmapProps {
   snapshot: MetricsSnapshot
@@ -29,9 +29,19 @@ const weekdayIndex = (day: string): number => (new Date(`${day}T00:00:00`).getDa
  * 与 GitHub 图表不同，这里以「星期几」为行，方便看出每周的使用规律。
  */
 export const ActivityHeatmap: FC<ActivityHeatmapProps> = ({ snapshot, range, t }) => {
-  const { weeks, monthMarks, activeDays } = useMemo(() => {
-    const days = rangeDayKeys(snapshot, range)
-    if (days.length === 0) return { weeks: [], monthMarks: [], activeDays: 0 }
+  const { weeks, monthMarks, activeDays, rhythm, peak } = useMemo(() => {
+    // 日历视图至少要铺满两周才看得懂；today/24h 这类短范围用最近两周兜底
+    const scoped = rangeDayKeys(snapshot, range)
+    const days = scoped.length >= 14 ? scoped : rangeDayKeys(snapshot, '30d').slice(-14)
+    if (days.length === 0) {
+      return {
+        weeks: [],
+        monthMarks: [],
+        activeDays: 0,
+        rhythm: { avgPerActiveDay: 0, peakDay: null, longestStreak: 0 },
+        peak: null as number | null,
+      }
+    }
 
     const max = days.reduce((peak, day) => Math.max(peak, snapshot.byDay[day]?.totalTokens ?? 0), 1)
 
@@ -64,7 +74,13 @@ export const ActivityHeatmap: FC<ActivityHeatmapProps> = ({ snapshot, range, t }
       }
     })
 
-    return { weeks: columns, monthMarks: marks, activeDays: active }
+    return {
+      weeks: columns,
+      monthMarks: marks,
+      activeDays: active,
+      rhythm: computeRhythm(snapshot, days),
+      peak: peakHour(snapshot),
+    }
   }, [snapshot, range])
 
   return (
@@ -120,6 +136,25 @@ export const ActivityHeatmap: FC<ActivityHeatmapProps> = ({ snapshot, range, t }
         ))}
         <span>{t('activity.more')}</span>
       </footer>
+
+      <dl className="tm-rhythm">
+        <div>
+          <dt>{t('activity.avg')}</dt>
+          <dd>{formatTokens(rhythm.avgPerActiveDay)}</dd>
+        </div>
+        <div>
+          <dt>{t('activity.peakDay')}</dt>
+          <dd>{rhythm.peakDay ? formatTokens(rhythm.peakDay.tokens) : '—'}</dd>
+        </div>
+        <div>
+          <dt>{t('activity.streak')}</dt>
+          <dd>{t('activity.streakValue', { count: rhythm.longestStreak })}</dd>
+        </div>
+        <div>
+          <dt>{t('stat.peakHour')}</dt>
+          <dd>{peak === null ? '—' : formatHour(peak)}</dd>
+        </div>
+      </dl>
     </section>
   )
 }
