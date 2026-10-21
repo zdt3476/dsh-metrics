@@ -173,7 +173,12 @@ describe('BreakdownTable', () => {
     expect(html).toContain('按会话')
     expect(html).not.toContain('按来源')
     expect(html).not.toContain('按账号')
-    expect(html).toContain('tm-table-rank')
+    // 行内序号徽标 + 独立占比列
+    expect(html).toContain('tm-row-rank')
+    expect(html).toContain('tm-col-share')
+    expect(html).toContain('tm-share-fill')
+    // 思考用量全为 0 时整列隐藏
+    expect(html).not.toContain('>思考<')
   })
 })
 

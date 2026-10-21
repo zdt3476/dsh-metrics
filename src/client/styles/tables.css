@@ -48,6 +48,41 @@
   flex-wrap: wrap;
 }
 
+.tm-table-tools {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tm-table-count {
+  font-size: 11px;
+  color: var(--tm-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 低频开关：弱化的幽灵按钮，不再占用主色权重 */
+.tm-tool-toggle {
+  padding: 3px 9px;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 5px;
+  border: 1px solid var(--tm-border);
+  background: transparent;
+  color: var(--tm-text-muted);
+  cursor: pointer;
+  transition: color 0.12s ease, border-color 0.12s ease;
+}
+
+.tm-tool-toggle:hover {
+  color: var(--tm-text);
+  border-color: var(--tm-accent);
+}
+
+.tm-tool-toggle[aria-pressed='true'] {
+  color: var(--tm-accent);
+  border-color: var(--tm-accent);
+}
+
 .tm-search-input {
   padding: 5px 10px;
   font-size: 12px;
@@ -93,14 +128,85 @@
   text-align: left;
 }
 
-.tm-table-rank {
-  width: 36px;
-  text-align: right;
+.tm-col-name {
+  width: 34%;
+  max-width: 0;
+}
+
+.tm-row-name {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+
+.tm-row-rank {
+  flex: none;
+  min-width: 14px;
   font-family: var(--tm-font-mono);
-  font-variant-numeric: tabular-nums;
+  font-size: 10px;
   color: var(--tm-text-muted);
+  text-align: right;
+}
+
+.tm-row-title {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tm-row-sub {
+  margin-top: 1px;
+  padding-left: 20px;
   font-size: 11px;
-  padding-right: 6px !important;
+  color: var(--tm-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 占比：数值 + 独立迷你轨道，不再与名称粘连 */
+.tm-col-share {
+  width: 96px;
+}
+
+.tm-share-value {
+  display: block;
+  font-size: 11px;
+  color: var(--tm-text);
+}
+
+.tm-share-track {
+  display: block;
+  height: 4px;
+  margin-top: 4px;
+  border-radius: 2px;
+  background: var(--tm-border);
+  overflow: hidden;
+}
+
+.tm-share-fill {
+  display: block;
+  height: 100%;
+  min-width: 2px;
+  border-radius: 2px;
+  background: var(--tm-accent);
+}
+
+.tm-cell-strong {
+  font-weight: 600;
+}
+
+.tm-cell-cache {
+  color: var(--tm-success);
+}
+
+/* 窄屏优先保证核心列可读，明细列按需隐藏 */
+@media (max-width: 900px) {
+  .tm-col-detail {
+    display: none;
+  }
 }
 
 .tm-table th {
