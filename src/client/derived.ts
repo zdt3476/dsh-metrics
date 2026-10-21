@@ -16,6 +16,8 @@ const MIN_ALL_SPAN_DAYS = 168
 
 export interface RangeStats {
   totalTokens: number
+  /** 范围内首次到末次调用的跨度（分钟，至少 1），用于折算 RPM / TPM。 */
+  spanMinutes: number
   calls: number
   activeDays: number
   sessionCount: number
@@ -24,6 +26,7 @@ export interface RangeStats {
   outputTokens: number
   cacheReadTokens: number
   cacheWriteTokens: number
+  reasoningTokens: number
 }
 
 export interface CompositionPart {
@@ -56,6 +59,7 @@ export function computeRangeStats(
     const all = snapshot.totals.all
     return {
       totalTokens: all.totalTokens,
+      spanMinutes: activeSpanMinutes(snapshot, 'all', now),
       calls: all.calls,
       activeDays: Object.values(snapshot.byDay).filter(day => (day.totalTokens ?? 0) > 0).length,
       sessionCount: snapshot.sessionCount,
@@ -64,6 +68,7 @@ export function computeRangeStats(
       outputTokens: all.outputTokens,
       cacheReadTokens: all.cacheReadTokens,
       cacheWriteTokens: all.cacheWriteTokens,
+      reasoningTokens: all.reasoningTokens,
     }
   }
 
@@ -86,6 +91,7 @@ export function computeRangeStats(
 
   return {
     totalTokens: acc.totalTokens,
+    spanMinutes: activeSpanMinutes(snapshot, range, now),
     calls: acc.calls,
     activeDays,
     sessionCount,
@@ -94,7 +100,29 @@ export function computeRangeStats(
     outputTokens: acc.outputTokens,
     cacheReadTokens: acc.cacheReadTokens,
     cacheWriteTokens: acc.cacheWriteTokens,
+    reasoningTokens: acc.reasoningTokens,
   }
+}
+
+/**
+ * 范围内「首次调用 → 末次调用」的跨度（分钟）。
+ *
+ * 用会话首末时间折算，不引入新的时间序列存储；跨度不足 1 分钟按 1 计，
+ * 避免除零并抑制单次调用的极端速率。
+ */
+export function activeSpanMinutes(snapshot: MetricsSnapshot, range: TimeRange, now = Date.now()): number {
+  const cutoff = range === 'all' ? 0 : now - (range === '7d' ? 7 : 30) * DAY_MS
+  let first = Number.POSITIVE_INFINITY
+  let last = 0
+  for (const session of Object.values(snapshot.bySession)) {
+    const start = session.firstAt ?? 0
+    const end = session.lastAt ?? start
+    if (end < cutoff) continue
+    if (start > 0 && start < first) first = start
+    if (end > last) last = end
+  }
+  if (!Number.isFinite(first) || last <= 0) return 1
+  return Math.max(1, Math.round((last - first) / 60_000))
 }
 
 /**

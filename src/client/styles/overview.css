@@ -1,27 +1,19 @@
-/* 总览与活跃度：页面唯一展示聚合数字与时间分布的区域。 */
+/* 首屏指标区：两张大卡 + 四张速率卡，紧凑排布。 */
 
-.tm-summary,
-.tm-activity {
-  background: var(--tm-bg-card);
-  border: 1px solid var(--tm-border);
-  border-radius: var(--tm-radius);
-  padding: 16px 18px;
+.tm-metrics {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px;
 }
 
-/* ---------- 总览 ---------- */
-
-.tm-summary-head {
+.tm-metrics-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  flex-wrap: wrap;
 }
 
-.tm-summary-title {
+.tm-metrics-title {
   margin: 0;
   font-size: 13px;
   font-weight: 600;
@@ -61,396 +53,172 @@
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
-.tm-summary-body {
+/* 4 列栅格：前两张主卡各占 2 列，后四张各占 1 列 */
+.tm-metrics-grid {
   display: grid;
-  grid-template-columns: minmax(180px, 220px) 1fr;
-  gap: 20px;
-  align-items: center;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
 }
 
-@media (max-width: 720px) {
-  .tm-summary-body {
-    grid-template-columns: 1fr;
-    gap: 14px;
-  }
-}
-
-.tm-summary-primary {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding-right: 20px;
-  border-right: 1px solid var(--tm-border);
-}
-
-@media (max-width: 720px) {
-  .tm-summary-primary {
-    padding-right: 0;
-    border-right: none;
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--tm-border);
-  }
-}
-
-.tm-summary-primary-label {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--tm-text-muted);
-  letter-spacing: 0.3px;
-}
-
-.tm-summary-primary-value {
-  font-size: 30px;
-  font-weight: 700;
-  font-family: var(--tm-font-mono);
-  line-height: 1.15;
-  letter-spacing: -1px;
-  color: var(--tm-text);
-}
-
-/* 迷你趋势线：只占 18px 高，宽度随容器伸缩 */
-.tm-spark {
-  display: block;
-  width: 100%;
-  height: 18px;
-  margin-top: 2px;
-}
-
-.tm-summary-primary .tm-spark {
-  height: 30px;
-  margin-top: 4px;
-}
-
-.tm-summary-stat .tm-spark {
-  height: 16px;
-}
-
-.tm-summary-primary-meta {
-  display: flex;
-  gap: 14px;
-  flex-wrap: wrap;
-  font-size: 11px;
-  color: var(--tm-text-muted);
-  margin-top: 2px;
-}
-
-.tm-summary-primary-meta b {
-  margin-left: 4px;
-  font-family: var(--tm-font-mono);
-  font-weight: 600;
-  color: var(--tm-text);
-}
-
-.tm-summary-stats {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 8px;
-  margin: 0;
-}
-
-@media (max-width: 980px) {
-  .tm-summary-stats {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 520px) {
-  .tm-summary-stats {
+@media (max-width: 900px) {
+  .tm-metrics-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-.tm-summary-stat {
+@media (max-width: 560px) {
+  .tm-metrics-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.tm-tile {
+  background: var(--tm-bg-card);
+  border: 1px solid var(--tm-border);
+  border-radius: var(--tm-radius);
+  padding: 14px 16px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  padding: 8px 10px;
-  border-radius: 6px;
-  background: var(--tm-bg-secondary);
+  gap: 4px;
   min-width: 0;
 }
 
-.tm-summary-stat dt {
-  font-size: 11px;
-  color: var(--tm-text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.tm-tile-large {
+  grid-column: span 2;
 }
 
-.tm-summary-stat dd {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 700;
-  font-family: var(--tm-font-mono);
-  color: var(--tm-text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+@media (max-width: 560px) {
+  .tm-tile-large {
+    grid-column: span 1;
+  }
 }
 
-/* ---------- Token 构成 ---------- */
-
-.tm-composition {
+.tm-tile-head {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding-top: 12px;
-  border-top: 1px solid var(--tm-border);
-}
-
-.tm-composition-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  font-size: 11px;
-  color: var(--tm-text-muted);
-}
-
-.tm-composition-title {
-  font-weight: 600;
-  letter-spacing: 0.3px;
-}
-
-.tm-composition-total {
-  font-family: var(--tm-font-mono);
-  font-weight: 600;
-  color: var(--tm-text);
-}
-
-.tm-composition-bar {
-  display: flex;
-  width: 100%;
-  height: 8px;
-  border-radius: 4px;
-  overflow: hidden;
-  background: var(--tm-bg-secondary);
-}
-
-.tm-composition-seg {
-  height: 100%;
-  transition: width 0.2s ease;
-}
-
-.tm-composition-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  font-size: 11px;
-  color: var(--tm-text-muted);
-}
-
-.tm-composition-legend li {
-  display: inline-flex;
   align-items: center;
   gap: 5px;
 }
 
-.tm-composition-legend b {
+.tm-tile-label {
+  font-size: 11px;
+  color: var(--tm-text-muted);
+  font-weight: 500;
+}
+
+.tm-tile-hint {
+  font-size: 10px;
+  color: var(--tm-text-muted);
+  opacity: 0.7;
+  cursor: help;
+}
+
+.tm-tile-value {
+  font-size: 22px;
+  font-weight: 700;
+  font-family: var(--tm-font-mono);
+  letter-spacing: -0.6px;
+  color: var(--tm-text);
+  line-height: 1.15;
+}
+
+.tm-tile-large .tm-tile-value {
+  font-size: 28px;
+  letter-spacing: -1px;
+}
+
+.tm-tile-sub {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  color: var(--tm-text-muted);
+  min-height: 16px;
+}
+
+.tm-tile-sub b {
   font-family: var(--tm-font-mono);
   font-weight: 600;
   color: var(--tm-text);
 }
 
-.tm-composition-name {
-  color: var(--tm-text-muted);
+.tm-pill-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
 }
 
-.seg-input {
-  background: #3b82f6;
+.tm-pill-danger,
+.tm-pill-danger b {
+  color: var(--tm-danger);
 }
 
-.seg-output {
-  background: #10b981;
+.tm-pill-gap {
+  width: 1px;
+  height: 10px;
+  background: var(--tm-border);
 }
 
-.seg-cacheRead {
-  background: #8b5cf6;
+.tm-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
 }
 
-.seg-cacheWrite {
-  background: #f59e0b;
+.tm-dot-success {
+  background: var(--tm-success);
 }
 
-/* ---------- 活跃度热力图 ---------- */
+/* 迷你趋势线：只占很矮的高度，宽度随容器伸缩 */
+.tm-spark {
+  display: block;
+  width: 100%;
+  height: 22px;
+  margin-top: 2px;
+}
 
-.tm-activity-head {
+.tm-tile-large .tm-spark {
+  height: 46px;
+}
+
+/* 底部两栏：趋势 + 模型用量 */
+.tm-bottom-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: 10px;
+}
+
+@media (max-width: 980px) {
+  .tm-bottom-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.tm-card-head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
 }
 
-.tm-activity-title {
+.tm-card-title {
   margin: 0;
   font-size: 13px;
   font-weight: 600;
   color: var(--tm-text);
 }
 
-.tm-activity-hint {
-  font-size: 11px;
-  color: var(--tm-text-muted);
+.tm-legend-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex: none;
+  display: inline-block;
 }
 
-.tm-heatmap-scroll {
-  width: 100%;
-  overflow-x: auto;
-  padding-bottom: 2px;
-}
-
-.tm-activity-body {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 20px;
-  align-items: center;
-}
-
-@media (max-width: 760px) {
-  .tm-activity-body {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-}
-
-.tm-activity-insights {
-  display: flex;
-  gap: 8px;
-  margin: 0;
-}
-
-@media (max-width: 760px) {
-  .tm-activity-insights {
-    justify-content: space-between;
-  }
-}
-
-.tm-activity-insight {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  padding: 8px 12px;
-  border-radius: 6px;
-  background: var(--tm-bg-secondary);
-  min-width: 88px;
-}
-
-.tm-activity-insight dt {
-  font-size: 10px;
-  color: var(--tm-text-muted);
-  white-space: nowrap;
-}
-
-.tm-activity-insight dd {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 700;
-  font-family: var(--tm-font-mono);
-  color: var(--tm-text);
-  white-space: nowrap;
-}
-
-.tm-heatmap-grid {
-  display: flex;
-  gap: 3px;
-  width: max-content;
-}
-
-.tm-heatmap-col {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.tm-heatmap-cell {
-  width: 11px;
-  height: 11px;
-  border-radius: 2px;
-  background: var(--tm-heatmap-0, rgba(148, 163, 184, 0.18));
-  display: block;
-}
-
-.tm-heatmap-grid .tm-heatmap-cell {
-  transition: transform 0.1s ease;
-}
-
-.tm-heatmap-grid .tm-heatmap-cell:hover {
-  transform: scale(1.3);
-}
-
-.tm-heatmap-cell.level-0 {
-  background: var(--tm-heatmap-0, rgba(148, 163, 184, 0.18));
-}
-
-.tm-heatmap-cell.level-empty {
-  background: transparent;
-}
-
-.tm-heatmap-cell.level-1 {
-  background: #93c5fd;
-}
-
-.tm-heatmap-cell.level-2 {
-  background: #60a5fa;
-}
-
-.tm-heatmap-cell.level-3 {
-  background: #3b82f6;
-}
-
-.tm-heatmap-cell.level-4 {
-  background: #1d4ed8;
-}
-
-.tm-activity-foot {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-  font-size: 11px;
-  color: var(--tm-text-muted);
-}
-
-.tm-activity-metaphor {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.tm-metaphor-switch {
-  border: 1px solid var(--tm-border);
-  background: var(--tm-bg-secondary);
-  color: var(--tm-text-muted);
-  border-radius: 4px;
-  padding: 0 5px;
-  height: 18px;
-  font-size: 11px;
-  line-height: 1;
-  cursor: pointer;
-  transition: color 0.12s ease, border-color 0.12s ease;
-}
-
-.tm-metaphor-switch:hover {
-  color: var(--tm-accent);
-  border-color: var(--tm-accent);
-}
-
-.tm-heatmap-legend {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-}
-
-.tm-heatmap-legend span {
-  margin: 0 3px;
-}
-
-/* ---------- 页脚 ---------- */
-
+/* 页脚 */
 .tm-footnote {
   display: flex;
   align-items: center;

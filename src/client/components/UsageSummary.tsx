@@ -1,14 +1,8 @@
 import { useMemo, type FC } from 'react'
 import { formatNumber, formatPercent, formatTokens } from '../../shared/format'
 import type { MetricsSnapshot } from '../../shared/types'
-import {
-  compositionParts,
-  computeRangeStats,
-  formatHour,
-  peakHour,
-  type TimeRange,
-} from '../derived'
-import { Sparkline } from './Sparkline'
+import { computeRangeStats, type TimeRange } from '../derived'
+import { MetricTile } from './MetricTile'
 
 export interface UsageSummaryProps {
   snapshot: MetricsSnapshot
@@ -25,14 +19,21 @@ const RANGE_LABEL: Record<TimeRange, string> = {
   '7d': 'range.7d',
 }
 
+/** 速率类数值：小数量保留两位小数，大数量走紧凑写法。 */
+function formatRate(value: number): string {
+  if (!Number.isFinite(value) || value <= 0) return '0'
+  if (value >= 1000) return formatTokens(value)
+  if (value >= 100) return String(Math.round(value))
+  return value.toFixed(2)
+}
+
 /**
- * 页面唯一的总量视图：所有聚合数字只在这里出现一次。
- * 时间范围控件也放在这里，作为整页统计口径的单一入口。
+ * 首屏指标区：两张主卡（请求总数 / Token 总数）+ 四张速率与效率小卡。
+ * 每个指标都带一条迷你趋势线，形状比数字先被感知。
  */
 export const UsageSummary: FC<UsageSummaryProps> = ({ snapshot, range, onRangeChange, t }) => {
   const stats = useMemo(() => computeRangeStats(snapshot, range), [snapshot, range])
-  const hour = useMemo(() => peakHour(snapshot), [snapshot])
-  /** 近 30 天的日级序列；没有趋势数据时返回空数组，迷你线自动不渲染。 */
+
   const recent = useMemo(() => {
     const days = Object.keys(snapshot.trend).sort().slice(-30)
     return {
@@ -41,37 +42,27 @@ export const UsageSummary: FC<UsageSummaryProps> = ({ snapshot, range, onRangeCh
       calls: days.map(day => snapshot.trend[day]?.calls ?? 0),
     }
   }, [snapshot.trend])
-  const parts = useMemo(() => compositionParts(stats), [stats])
 
-  const compositionTotal = parts.reduce((sum, part) => sum + part.value, 0)
-  const compositionShare = (value: number) =>
-    compositionTotal > 0 ? (value / compositionTotal) * 100 : 0
+  const rpm = stats.calls / stats.spanMinutes
+  const tpm = stats.totalTokens / stats.spanMinutes
+  const perCall = stats.calls > 0 ? stats.totalTokens / stats.calls : 0
 
-  const legend = [
-    { key: 'input', label: t('field.input') },
-    { key: 'output', label: t('field.output') },
-    { key: 'cacheRead', label: t('field.cacheRead') },
-    { key: 'cacheWrite', label: t('field.cacheWrite') },
-  ] as const
+  // 失败统计未开启时没有分母，不能宣称成功率，只展示成功数
+  const failuresKnown = snapshot.failedAttempts !== null
+  const failures = snapshot.failedAttempts?.count ?? 0
+  const successRate = stats.calls + failures > 0 ? stats.calls / (stats.calls + failures) : 0
 
-  const cells: Array<{
-    key: string
-    label: string
-    value: string
-    series?: number[]
-    color?: string
-  }> = [
-    { key: 'cache', label: t('field.cacheHitRate'), value: formatPercent(stats.cacheHitRate), series: recent.cache, color: '#10b981' },
-    { key: 'calls', label: t('field.calls'), value: formatNumber(stats.calls), series: recent.calls, color: '#3b82f6' },
-    { key: 'sessions', label: t('stat.sessions'), value: formatNumber(stats.sessionCount) },
-    { key: 'days', label: t('stat.activeDays'), value: String(stats.activeDays) },
-    { key: 'peak', label: t('stat.peakHour'), value: hour === null ? '—' : formatHour(hour) },
+  const composition = [
+    { key: 'input', label: t('field.input'), value: stats.inputTokens },
+    { key: 'output', label: t('field.output'), value: stats.outputTokens },
+    { key: 'cacheRead', label: t('field.cacheRead'), value: stats.cacheReadTokens },
+    { key: 'reasoning', label: t('field.reasoning'), value: stats.reasoningTokens },
   ]
 
   return (
-    <section className="tm-summary">
-      <header className="tm-summary-head">
-        <h2 className="tm-summary-title">{t('summary.title')}</h2>
+    <section className="tm-metrics">
+      <header className="tm-metrics-head">
+        <h2 className="tm-metrics-title">{t('summary.title')}</h2>
         <div className="tm-range-group" role="group" aria-label={t('summary.range')}>
           {RANGES.map(value => (
             <button
@@ -87,63 +78,87 @@ export const UsageSummary: FC<UsageSummaryProps> = ({ snapshot, range, onRangeCh
         </div>
       </header>
 
-      <div className="tm-summary-body">
-        <div className="tm-summary-primary">
-          <span className="tm-summary-primary-label">{t('stat.totalTokens')}</span>
-          <strong className="tm-summary-primary-value">{formatTokens(stats.totalTokens)}</strong>
-          <Sparkline values={recent.total} color="#8b5cf6" />
-          <div className="tm-summary-primary-meta">
-            <span>
-              {t('range.today')}
-              <b>{formatTokens(snapshot.totals.today.totalTokens)}</b>
+      <div className="tm-metrics-grid">
+        <MetricTile
+          size="large"
+          label={t('metric.requests')}
+          value={formatNumber(stats.calls)}
+          series={recent.calls}
+          color="#3b82f6"
+        >
+          {failuresKnown && (
+            <span className="tm-pill-stat">
+              <i className="tm-dot tm-dot-success" />
+              {t('metric.successRate')} {formatPercent(successRate, 2)}
             </span>
-            <span>
-              {t('summary.week')}
-              <b>{formatTokens(snapshot.totals.week.totalTokens)}</b>
+          )}
+          <span className="tm-pill-stat">
+            {t('metric.success')} <b>{formatNumber(stats.calls)}</b>
+          </span>
+          {failures > 0 && (
+            <span className="tm-pill-stat tm-pill-danger">
+              {t('metric.failure')} <b>{formatNumber(failures)}</b>
             </span>
-          </div>
-        </div>
+          )}
+        </MetricTile>
 
-        <dl className="tm-summary-stats">
-          {cells.map(cell => (
-            <div key={cell.key} className="tm-summary-stat">
-              <dt>{cell.label}</dt>
-              <dd>{cell.value}</dd>
-              {cell.series && cell.series.length > 1 && (
-                <Sparkline values={cell.series} color={cell.color} area={false} />
-              )}
-            </div>
+        <MetricTile
+          size="large"
+          label={t('metric.tokens')}
+          value={formatTokens(stats.totalTokens)}
+          series={recent.total}
+          color="#8b5cf6"
+        >
+          {composition.map(item => (
+            <span key={item.key} className="tm-pill-stat">
+              {item.label} <b>{formatTokens(item.value)}</b>
+            </span>
           ))}
-        </dl>
-      </div>
+        </MetricTile>
 
-      <div className="tm-composition">
-        <div className="tm-composition-head">
-          <span className="tm-composition-title">{t('summary.composition')}</span>
-          <span className="tm-composition-total">{formatTokens(compositionTotal)}</span>
-        </div>
-        <div className="tm-composition-bar">
-          {parts.map(part => (
-            <span
-              key={part.key}
-              className={`tm-composition-seg seg-${part.key}`}
-              style={{ width: `${compositionShare(part.value)}%` }}
-              title={`${part.key}: ${formatTokens(part.value)}`}
-            />
-          ))}
-        </div>
-        <ul className="tm-composition-legend">
-          {legend.map(item => {
-            const value = parts.find(part => part.key === item.key)?.value ?? 0
-            return (
-              <li key={item.key}>
-                <i className={`tm-legend-dot seg-${item.key}`} />
-                <span className="tm-composition-name">{item.label}</span>
-                <b>{formatTokens(value)}</b>
-              </li>
-            )
-          })}
-        </ul>
+        <MetricTile
+          label={t('metric.rpm')}
+          value={formatRate(rpm)}
+          hint={t('metric.rpmHint')}
+          series={recent.calls}
+          color="#10b981"
+        >
+          {t('metric.requests')} {formatNumber(stats.calls)}
+        </MetricTile>
+
+        <MetricTile
+          label={t('metric.tpm')}
+          value={formatRate(tpm)}
+          hint={t('metric.tpmHint')}
+          series={recent.total}
+          color="#f59e0b"
+        >
+          {t('metric.tokens')} {formatTokens(stats.totalTokens)}
+        </MetricTile>
+
+        <MetricTile
+          label={t('field.cacheHitRate')}
+          value={formatPercent(stats.cacheHitRate)}
+          hint={t('metric.cacheHint')}
+          series={recent.cache}
+          color="#64748b"
+        >
+          {t('field.cacheRead')} {formatTokens(stats.cacheReadTokens)}
+          <span className="tm-pill-gap" />
+          {t('field.input')} {formatTokens(stats.inputTokens)}
+        </MetricTile>
+
+        <MetricTile
+          label={t('metric.perCall')}
+          value={formatTokens(perCall)}
+          hint={t('metric.perCallHint')}
+          series={recent.total}
+          color="#06b6d4"
+        >
+          {t('metric.activeDays')} {stats.activeDays}
+          <span className="tm-pill-gap" />
+          {t('stat.sessions')} {formatNumber(stats.sessionCount)}
+        </MetricTile>
       </div>
     </section>
   )

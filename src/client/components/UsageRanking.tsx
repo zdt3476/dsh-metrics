@@ -1,212 +1,101 @@
 import { useMemo, useState, type FC } from 'react'
 import { formatNumber, formatPercent, formatTokens } from '../../shared/format'
-import type { MetricsSnapshot, TokenCounters, TokenCountersWithRate } from '../../shared/types'
-import { cacheHitRate } from '../../shared/utils'
+import type { MetricsSnapshot, TokenCounters } from '../../shared/types'
 import { colorForName } from '../colors'
-import { relativeTime, type RelativeTime } from '../derived'
-
-export type RankingTab = 'model' | 'provider' | 'project' | 'session'
-export type RankingSort = 'totalTokens' | 'calls' | 'cacheRate'
+import { DonutChart } from './DonutChart'
 
 export interface UsageRankingProps {
   snapshot: MetricsSnapshot
-  t: (key: string) => string
+  t: (key: string, params?: Record<string, string | number>) => string
 }
 
-interface RankRow {
-  key: string
-  name: string
-  sub?: string
-  counters: TokenCounters | TokenCountersWithRate
-  /** 有模型归属时给出色点，便于在榜单里快速区分模型。 */
-  dotColor?: string
-  /** 最近活跃时间，仅会话维度提供。 */
-  lastAt?: number
-}
+type Metric = 'tokens' | 'calls'
 
-function formatRelative(time: RelativeTime | null, t: (key: string) => string): string | null {
-  if (!time) return null
-  if (time.unit === 'now') return t('time.now')
-  if (time.unit === 'minute') return t('time.minute').replace('{count}', String(time.count))
-  if (time.unit === 'hour') return t('time.hour').replace('{count}', String(time.count))
-  return t('time.day').replace('{count}', String(time.count))
-}
+const TOP_SLICES = 5
 
-const SORTS: RankingSort[] = ['totalTokens', 'calls', 'cacheRate']
-
-const SORT_LABEL: Record<RankingSort, string> = {
-  totalTokens: 'sort.tokens',
-  calls: 'sort.calls',
-  cacheRate: 'sort.cache',
-}
-
+/**
+ * 模型用量：左侧环形图给整体形状，右侧列表给精确数值。
+ * 切换「按用量 / 按调用」时图与列表同步换口径，避免两套排序各自为政。
+ */
 export const UsageRanking: FC<UsageRankingProps> = ({ snapshot, t }) => {
-  const [activeTab, setActiveTab] = useState<RankingTab>('model')
-  const [query, setQuery] = useState('')
-  const [sort, setSort] = useState<RankingSort>('totalTokens')
-  const [expanded, setExpanded] = useState<string | null>(null)
+  const [metric, setMetric] = useState<Metric>('tokens')
 
-  const tabs: Array<{ key: RankingTab; label: string }> = [
-    { key: 'model', label: t('table.model') },
-    { key: 'provider', label: t('table.provider') },
-    { key: 'project', label: t('table.project') },
-    { key: 'session', label: t('table.session') || t('column.session') },
-  ]
+  const { slices, rows, total } = useMemo(() => {
+    const entries = Object.entries(snapshot.byModelName) as Array<[string, TokenCounters]>
+    const valueOf = (counters: TokenCounters) => (metric === 'calls' ? counters.calls : counters.totalTokens)
 
-  const rows: RankRow[] = useMemo(() => {
-    switch (activeTab) {
-      case 'model':
-        return Object.entries(snapshot.byModelName).map(([name, counters]) => ({
-          key: name,
-          name,
-          dotColor: colorForName(name),
-          counters,
-        }))
-      case 'provider':
-        return Object.entries(snapshot.byProvider).map(([name, counters]) => ({ key: name, name, counters }))
-      case 'project':
-        return Object.entries(snapshot.byProject).map(([cwd, counters]) => ({ key: cwd, name: cwd, counters }))
-      case 'session':
-        return Object.values(snapshot.bySession).map(session => ({
-          key: session.id,
-          name: session.title || t('noTitle'),
-          sub: [session.provider, session.model].filter(Boolean).join(' / '),
-          dotColor: session.model ? colorForName(session.model) : undefined,
-          lastAt: session.lastAt || session.firstAt,
-          counters: session.counters,
-        }))
-      default:
-        return []
+    const sorted = [...entries].sort((a, b) => valueOf(b[1]) - valueOf(a[1]))
+    const sum = sorted.reduce((acc, [, counters]) => acc + valueOf(counters), 0)
+
+    const head = sorted.slice(0, TOP_SLICES)
+    const tail = sorted.slice(TOP_SLICES)
+    const restValue = tail.reduce((acc, [, counters]) => acc + valueOf(counters), 0)
+
+    const list = head.map(([name, counters]) => ({
+      key: name,
+      name,
+      value: valueOf(counters),
+      color: colorForName(name),
+    }))
+    if (restValue > 0) {
+      list.push({ key: '__rest__', name: t('chart.groupRest'), value: restValue, color: '#94a3b8' })
     }
-  }, [activeTab, snapshot, t])
 
-  const ranked = useMemo(() => {
-    const keyword = query.trim().toLowerCase()
-    const filtered = keyword
-      ? rows.filter(row => row.name.toLowerCase().includes(keyword) || (row.sub?.toLowerCase().includes(keyword) ?? false))
-      : rows
-
-    const score = (row: RankRow): number => {
-      if (sort === 'calls') return row.counters.calls ?? 0
-      if (sort === 'cacheRate') return cacheHitRate(row.counters)
-      return row.counters.totalTokens ?? 0
+    return {
+      slices: list.map(item => ({ key: item.key, value: item.value, color: item.color })),
+      rows: list,
+      total: sum,
     }
-    return [...filtered].sort((a, b) => score(b) - score(a))
-  }, [rows, query, sort])
+  }, [snapshot.byModelName, metric, t])
 
-  const grandTotal = snapshot.totals.all.totalTokens || 1
+  const formatValue = (value: number) => (metric === 'calls' ? formatNumber(value) : formatTokens(value))
 
   return (
-    <div className="tm-ranking">
-      <div className="tm-tabs">
-        {tabs.map(tab => (
+    <section className="tm-model-usage">
+      <header className="tm-card-head">
+        <h3 className="tm-card-title">{t('metric.modelUsage')}</h3>
+        <div className="tm-sort-group" role="group" aria-label={t('metric.modelUsage')}>
           <button
-            key={tab.key}
             type="button"
-            className={`tm-tab ${activeTab === tab.key ? 'active' : ''}`}
-            onClick={() => setActiveTab(tab.key)}
+            className={`tm-sort-btn ${metric === 'calls' ? 'active' : ''}`}
+            aria-pressed={metric === 'calls'}
+            onClick={() => setMetric('calls')}
           >
-            {tab.label}
+            {t('metric.byCalls')}
           </button>
-        ))}
-      </div>
-
-      <div className="tm-ranking-toolbar">
-        <input
-          type="text"
-          className="tm-search-input"
-          placeholder={t('table.search')}
-          value={query}
-          onChange={event => setQuery(event.target.value)}
-        />
-        <div className="tm-ranking-tools">
-          <span className="tm-ranking-count">
-            {ranked.length}
-            {t('table.count')}
-          </span>
-          <div className="tm-sort-group" role="group" aria-label={t('sort.by')}>
-            {SORTS.map(option => (
-              <button
-                key={option}
-                type="button"
-                className={`tm-sort-btn ${sort === option ? 'active' : ''}`}
-                aria-pressed={sort === option}
-                onClick={() => setSort(option)}
-              >
-                {t(SORT_LABEL[option])}
-              </button>
-            ))}
-          </div>
+          <button
+            type="button"
+            className={`tm-sort-btn ${metric === 'tokens' ? 'active' : ''}`}
+            aria-pressed={metric === 'tokens'}
+            onClick={() => setMetric('tokens')}
+          >
+            {t('metric.byTokens')}
+          </button>
         </div>
-      </div>
+      </header>
 
-      <div className="tm-ranking-list" role="list">
-        {ranked.length === 0 ? (
-          <div className="tm-ranking-empty">{t('table.searchEmpty')}</div>
-        ) : (
-          ranked.map((row, index) => {
-            const counters = row.counters
-            const share = Math.min(100, Math.max(0, ((counters.totalTokens ?? 0) / grandTotal) * 100))
-            const isOpen = expanded === row.key
-            const hitRate = cacheHitRate(counters)
-            const relative = formatRelative(relativeTime(row.lastAt), t)
+      <div className="tm-model-usage-body">
+        <DonutChart
+          slices={slices}
+          centerValue={formatTokens(total)}
+          centerLabel={metric === 'calls' ? t('field.calls') : 'tokens'}
+        />
+        <ul className="tm-model-legend">
+          {rows.map(row => {
+            const share = total > 0 ? row.value / total : 0
             return (
-              <div key={row.key} className={`tm-rank-item ${isOpen ? 'open' : ''}`} role="listitem">
-                <button
-                  type="button"
-                  className="tm-rank-row"
-                  aria-expanded={isOpen}
-                  onClick={() => setExpanded(isOpen ? null : row.key)}
-                >
-                  <span className="tm-rank-bar" style={{ width: `${share}%` }} aria-hidden="true" />
-                  <span className={`tm-rank-no ${index < 3 ? 'top' : ''}`}>{index + 1}</span>
-                  <span className="tm-rank-main">
-                    <span className="tm-rank-titlerow">
-                      <i
-                        className={`tm-rank-dot ${row.dotColor ? '' : 'empty'}`}
-                        style={row.dotColor ? { background: row.dotColor } : undefined}
-                        aria-hidden="true"
-                      />
-                      <span className="tm-rank-name" title={row.name}>
-                        {row.name}
-                      </span>
-                    </span>
-                    <span className="tm-rank-meta">
-                      {row.sub && <span className="tm-rank-sub">{row.sub}</span>}
-                      <span>{t('field.cacheHitRate')} {formatPercent(hitRate)}</span>
-                      <span>{t('field.calls')} {formatNumber(counters.calls ?? 0)}</span>
-                      {relative && <span className="tm-rank-time">{relative}</span>}
-                    </span>
-                  </span>
-                  <span className="tm-rank-value">
-                    <span className="tm-rank-total">{formatTokens(counters.totalTokens ?? 0)}</span>
-                    <span className="tm-rank-share">{share.toFixed(1)}%</span>
-                  </span>
-                  <span className="tm-rank-chevron" aria-hidden="true">›</span>
-                </button>
-
-                {isOpen && (
-                  <dl className="tm-rank-detail">
-                    {[
-                      { key: 'input', label: t('field.input'), value: formatNumber(counters.inputTokens ?? 0) },
-                      { key: 'output', label: t('field.output'), value: formatNumber(counters.outputTokens ?? 0) },
-                      { key: 'reasoning', label: t('field.reasoning'), value: formatNumber(counters.reasoningTokens ?? 0) },
-                      { key: 'cacheRead', label: t('field.cacheRead'), value: formatNumber(counters.cacheReadTokens ?? 0) },
-                      { key: 'cacheWrite', label: t('field.cacheWrite'), value: formatNumber(counters.cacheWriteTokens ?? 0) },
-                      { key: 'calls', label: t('field.calls'), value: formatNumber(counters.calls ?? 0) },
-                    ].map(item => (
-                      <div key={item.key} className="tm-rank-detail-cell">
-                        <dt>{item.label}</dt>
-                        <dd>{item.value}</dd>
-                      </div>
-                    ))}
-                  </dl>
-                )}
-              </div>
+              <li key={row.key}>
+                <i className="tm-legend-dot" style={{ background: row.color }} />
+                <span className="tm-model-name" title={row.name}>
+                  {row.name}
+                </span>
+                <span className="tm-model-value">{formatValue(row.value)}</span>
+                <span className="tm-model-share">{formatPercent(share, 1)}</span>
+              </li>
             )
-          })
-        )}
+          })}
+        </ul>
       </div>
-    </div>
+    </section>
   )
 }
