@@ -103,6 +103,8 @@
 }
 
 .tm-chart-card.compact .tm-chart-svg-wrap {
-  height: 160px;
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 150px;
 }
 

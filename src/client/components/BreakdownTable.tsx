@@ -130,7 +130,8 @@ export const BreakdownTable: FC<BreakdownTableProps> = ({ snapshot, t }) => {
         <table className="tm-table">
           <thead>
             <tr>
-              <th style={{ width: '30%' }}>{tabs.find(t => t.key === activeTab)?.label}</th>
+              <th className="tm-table-rank">{t('ranking.rank')}</th>
+              <th style={{ width: '28%' }}>{tabs.find(t => t.key === activeTab)?.label}</th>
               <th className="tm-table-mono" onClick={() => handleSort('totalTokens')}>
                 {t('field.total')} {sortField === 'totalTokens' ? (sortAsc ? '▲' : '▼') : ''}
               </th>
@@ -154,16 +155,17 @@ export const BreakdownTable: FC<BreakdownTableProps> = ({ snapshot, t }) => {
           <tbody>
             {filteredRows.length === 0 ? (
               <tr>
-                <td colSpan={7} style={{ textAlign: 'center', padding: '32px', color: 'var(--tm-text-muted)' }}>
+                <td colSpan={8} style={{ textAlign: 'center', padding: '32px', color: 'var(--tm-text-muted)' }}>
                   {t('table.searchEmpty')}
                 </td>
               </tr>
             ) : (
-              filteredRows.map(row => {
+              filteredRows.map((row, index) => {
                 const hitRate = cacheHitRate(row.counters)
                 const sharePercent = Math.min(100, Math.max(0, (row.counters.totalTokens / grandTotal) * 100))
                 return (
                   <tr key={row.key}>
+                    <td className="tm-table-rank">{index + 1}</td>
                     <td>
                       <div style={{ fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {row.name}

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FC } from 'react'
+import { useLayoutEffect, useRef, useState, type FC } from 'react'
 import { formatNumber, formatPercent, formatTokens } from '../../shared/format'
 import type { ModelTrend, TokenCountersWithRate } from '../../shared/types'
 
@@ -390,19 +390,24 @@ const SingleTrendCard: FC<SingleTrendCardProps> = ({
 
 export const TrendChart: FC<TrendChartProps> = ({ trend, modelTrend, t }) => {
   const containerRef = useRef<HTMLDivElement>(null)
-  const [containerWidth, setContainerWidth] = useState<number>(1000)
+  const [containerWidth, setContainerWidth] = useState<number>(0)
   const [mode, setMode] = useState<ChartMode>('total')
 
   const days = Object.keys(trend).sort()
+  // 模型曲线以其自有日期轴为准，避免用总量轴补 0 造成假性归零。
+  const modelDays = modelTrend?.days.length ? [...modelTrend.days].sort() : days
 
-  useEffect(() => {
-    if (!containerRef.current) return
+  // 挂载即测量一次，避免窄容器首帧误用三栏布局。
+  useLayoutEffect(() => {
+    const node = containerRef.current
+    if (!node) return
+    setContainerWidth(node.clientWidth)
     const ro = new ResizeObserver(entries => {
       for (const entry of entries) {
         setContainerWidth(entry.contentRect.width)
       }
     })
-    ro.observe(containerRef.current)
+    ro.observe(node)
     return () => ro.disconnect()
   }, [])
 
@@ -443,7 +448,7 @@ export const TrendChart: FC<TrendChartProps> = ({ trend, modelTrend, t }) => {
             title={`${t('chart.title')} · ${t('chart.mode.model')}`}
             trend={trend}
             modelTrend={modelTrend}
-            days={days}
+            days={modelDays}
             compact
             t={t}
           />
@@ -454,7 +459,7 @@ export const TrendChart: FC<TrendChartProps> = ({ trend, modelTrend, t }) => {
           mode={mode}
           trend={trend}
           modelTrend={modelTrend}
-          days={days}
+          days={mode === 'model' ? modelDays : days}
           showModes
           activeMode={mode}
           onSelectMode={setMode}

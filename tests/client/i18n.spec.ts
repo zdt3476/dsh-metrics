@@ -18,4 +18,10 @@ describe('client i18n', () => {
     const t = createTranslator('zh')
     expect(t('not.exist {name}', { name: 'DSH' })).toBe('not.exist DSH')
   })
+
+  it('keeps zh and en dictionaries in sync', () => {
+    const zhKeys = Object.keys(DICT_ZH).sort()
+    const enKeys = Object.keys(DICT_EN).sort()
+    expect(enKeys).toEqual(zhKeys)
+  })
 })

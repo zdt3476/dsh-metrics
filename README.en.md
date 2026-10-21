@@ -31,7 +31,8 @@ By intercepting internal model invocation events within the DSH host, it aggrega
 
 - 🎯 **Comprehensive Call Auditing**: Dual-channel event capture covering all `assistant/message` events, with waterfall interceptors for session title generation, memory compaction, and custom model streams.
 - 📊 **Multi-dimensional Breakdown**: Drill down into usage by **Model**, **Provider**, **Project directory (CWD)**, and **Session**, with in-container scrolling and sticky table headers for long lists.
-- 🗓️ **Overview Dashboard & Activity Heatmap**: Six core metrics (sessions, messages, total tokens, active days, peak hour, top model) switchable across All / 30 days / 7 days, paired with a GitHub-style weekly heatmap and a model usage ranking.
+- 🧮 **De-duplicated Summary**: every aggregate appears exactly once — total usage (with today / this week), cache hit rate, calls, sessions, active days and peak hour live in one band, plus a stacked bar for the input / output / cache-read / cache-write composition.
+- 🗓️ **Activity & Rhythm Insights**: a GitHub-style weekly heatmap aligned to calendar weeks, paired with average usage per active day, peak day and longest streak.
 - 📈 **Adaptive Trend Chart**: Expands into three side-by-side charts (total, cache rate, model comparison) on wide screens and collapses to a single swappable chart on narrow ones.
 - ⚡ **Prompt Cache Efficiency**: Explicitly measures `cacheReadTokens` versus fresh input to calculate the exact cache hit rate, helping optimize prompt engineering and context costs.
 - 🔄 **Offline Historical Backfill**: Automatically scans and recovers historical sessions from local disk storage (`.jsonl.zstd`) using native decompression, guaranteeing recovery even without external persistence services.
