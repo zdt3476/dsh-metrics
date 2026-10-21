@@ -51,6 +51,11 @@ const snapshot: MetricsSnapshot = {
     17: counters(150_000, 800),
     10: counters(50_000, 300),
   },
+  pricing: {
+    'deepseek-v4.1': { input: 0.0000003, output: 0.0000012, cacheRead: 0.000000006, cacheWrite: 0.0000003, reasoning: 0.0000012 },
+  },
+  pricingFetchedAt: today,
+  rate: { windowMinutes: 60, calls: 120, tokens: 900_000 },
   byModelDay: {
     'deepseek-v4.1': {
       [key(0)]: { ...counters(100_000, 400, 60_000), cacheHitRate: 0.5 },
@@ -112,7 +117,7 @@ describe('UsageSummary', () => {
     // 四张速率卡
     expect(html).toContain('RPM')
     expect(html).toContain('TPM')
-    expect(html).toContain('单次均耗')
+    expect(html).toContain('成本')
   })
 
   it('renders token composition inline on the token tile', () => {

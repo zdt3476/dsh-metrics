@@ -5,7 +5,7 @@
  */
 
 import type { MetricsSnapshot } from '../shared/types'
-import { cacheHitRate, emptyCounters, mergeCounters } from '../shared/utils'
+import { cacheHitRate, costOf, emptyCounters, mergeCounters, normalizeModelName } from '../shared/utils'
 import { dayKey } from '../shared/utils'
 
 export type TimeRange = 'all' | '30d' | '7d'
@@ -16,8 +16,6 @@ const MIN_ALL_SPAN_DAYS = 168
 
 export interface RangeStats {
   totalTokens: number
-  /** 范围内首次到末次调用的跨度（分钟，至少 1），用于折算 RPM / TPM。 */
-  spanMinutes: number
   calls: number
   activeDays: number
   sessionCount: number
@@ -59,7 +57,6 @@ export function computeRangeStats(
     const all = snapshot.totals.all
     return {
       totalTokens: all.totalTokens,
-      spanMinutes: activeSpanMinutes(snapshot, 'all', now),
       calls: all.calls,
       activeDays: Object.values(snapshot.byDay).filter(day => (day.totalTokens ?? 0) > 0).length,
       sessionCount: snapshot.sessionCount,
@@ -91,7 +88,6 @@ export function computeRangeStats(
 
   return {
     totalTokens: acc.totalTokens,
-    spanMinutes: activeSpanMinutes(snapshot, range, now),
     calls: acc.calls,
     activeDays,
     sessionCount,
@@ -102,27 +98,6 @@ export function computeRangeStats(
     cacheWriteTokens: acc.cacheWriteTokens,
     reasoningTokens: acc.reasoningTokens,
   }
-}
-
-/**
- * 范围内「首次调用 → 末次调用」的跨度（分钟）。
- *
- * 用会话首末时间折算，不引入新的时间序列存储；跨度不足 1 分钟按 1 计，
- * 避免除零并抑制单次调用的极端速率。
- */
-export function activeSpanMinutes(snapshot: MetricsSnapshot, range: TimeRange, now = Date.now()): number {
-  const cutoff = range === 'all' ? 0 : now - (range === '7d' ? 7 : 30) * DAY_MS
-  let first = Number.POSITIVE_INFINITY
-  let last = 0
-  for (const session of Object.values(snapshot.bySession)) {
-    const start = session.firstAt ?? 0
-    const end = session.lastAt ?? start
-    if (end < cutoff) continue
-    if (start > 0 && start < first) first = start
-    if (end > last) last = end
-  }
-  if (!Number.isFinite(first) || last <= 0) return 1
-  return Math.max(1, Math.round((last - first) / 60_000))
 }
 
 /**
@@ -230,4 +205,54 @@ export function relativeTime(timestamp: number | undefined, now = Date.now()): R
   const hours = Math.floor(minutes / 60)
   if (hours < 24) return { unit: 'hour', count: hours }
   return { unit: 'day', count: Math.floor(hours / 24) }
+}
+
+export interface CostSummary {
+  total: number
+  /** 没有任何模型能匹配到价格时为 true，UI 据此隐藏金额。 */
+  unavailable: boolean
+  /** 有用量但缺价格的模型名。 */
+  missing: string[]
+}
+
+/** 区间成本：按模型各自的单价累加，缺价模型单独报出而不是按 0 计算。 */
+export function computeRangeCost(snapshot: MetricsSnapshot, days: string[]): CostSummary {
+  const inRange = new Set(days)
+  let total = 0
+  let priced = false
+  const missing: string[] = []
+
+  for (const [model, dayMap] of Object.entries(snapshot.byModelDay ?? {})) {
+    const price = snapshot.pricing[normalizeModelName(model)]
+    let tokens = 0
+    let cost = 0
+    for (const [day, counters] of Object.entries(dayMap)) {
+      if (!inRange.has(day)) continue
+      tokens += counters.totalTokens ?? 0
+      if (price) cost += costOf(counters, price)
+    }
+    if (tokens <= 0) continue
+    if (!price) {
+      missing.push(model)
+      continue
+    }
+    priced = true
+    total += cost
+  }
+
+  return { total, unavailable: !priced, missing }
+}
+
+/** 逐日成本，用于成本迷你趋势线。 */
+export function dailyCostSeries(snapshot: MetricsSnapshot, days: string[]): number[] {
+  return days.map(day => {
+    let cost = 0
+    for (const [model, dayMap] of Object.entries(snapshot.byModelDay ?? {})) {
+      const price = snapshot.pricing[normalizeModelName(model)]
+      const counters = dayMap[day]
+      if (!price || !counters) continue
+      cost += costOf(counters, price)
+    }
+    return cost
+  })
 }

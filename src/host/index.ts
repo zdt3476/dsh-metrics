@@ -17,6 +17,7 @@ import { isReloading, selfReload, watchPackage } from './reload'
 import { registerRoutes } from './routes'
 import { dataDir } from './storage'
 import { acquireTracker } from './tracker'
+import { loadPricingTable } from './pricing'
 import { PluginUpdater } from './updater'
 
 export const name = 'dsh-metrics'
@@ -176,6 +177,23 @@ export function apply(ctx: Context, rawConfig?: unknown): void {
     queueMicrotask(() => { void poll() })
     queueMicrotask(() => { void diskFallback() })
   }
+
+  // 3.5 模型价格：后台拉取并缓存，失败时残留缓存仍可用
+  ctx.effect(() => {
+    let stopped = false
+    const refresh = async () => {
+      const result = await loadPricingTable(dataDir(tracker.home), logger)
+      if (stopped) return
+      tracker.setPricing(result.prices, result.fetchedAt)
+    }
+    void refresh()
+    const timer = setInterval(() => { void refresh() }, 6 * 3600_000)
+    timer?.unref?.()
+    return () => {
+      stopped = true
+      clearInterval(timer)
+    }
+  }, 'dsh-metrics: 价格表')
 
   // 4. 账号快照监视
   if (config.trackAccount) {

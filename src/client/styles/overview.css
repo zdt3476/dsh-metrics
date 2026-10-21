@@ -237,3 +237,164 @@
 .tm-footnote-sep {
   margin: 0 6px;
 }
+
+/* 活跃热力图：行为星期，列为自然周 */
+.tm-activity,
+.tm-providers {
+  background: var(--tm-bg-card);
+  border: 1px solid var(--tm-border);
+  border-radius: var(--tm-radius);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.tm-activity-hint {
+  font-size: 11px;
+  color: var(--tm-text-muted);
+}
+
+.tm-heatmap-scroll {
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.tm-heatmap-months {
+  display: grid;
+  gap: 3px;
+  margin-bottom: 4px;
+}
+
+.tm-heatmap-month {
+  font-size: 10px;
+  color: var(--tm-text-muted);
+  white-space: nowrap;
+}
+
+.tm-heatmap-body {
+  display: flex;
+  gap: 6px;
+}
+
+.tm-heatmap-weekdays {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 22px;
+  flex: none;
+}
+
+.tm-heatmap-weekdays span {
+  height: 12px;
+  line-height: 12px;
+  font-size: 10px;
+  color: var(--tm-text-muted);
+}
+
+.tm-heatmap-grid {
+  display: flex;
+  gap: 3px;
+}
+
+.tm-heatmap-col {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.tm-heatmap-cell {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  display: block;
+  background: var(--tm-heatmap-0, rgba(148, 163, 184, 0.18));
+}
+
+.tm-heatmap-cell.level-empty {
+  background: transparent;
+}
+
+.tm-heatmap-cell.level-1 { background: #c7d2fe; }
+.tm-heatmap-cell.level-2 { background: #93b4f8; }
+.tm-heatmap-cell.level-3 { background: #4f83e0; }
+.tm-heatmap-cell.level-4 { background: #1e4fa8; }
+
+.tm-heatmap-legend {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 3px;
+  font-size: 10px;
+  color: var(--tm-text-muted);
+}
+
+.tm-heatmap-legend span {
+  margin: 0 3px;
+}
+
+/* 供应商列表 */
+.tm-provider-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tm-provider-list li {
+  display: grid;
+  grid-template-columns: 7px minmax(0, 1fr) auto auto auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  font-size: 11px;
+  color: var(--tm-text-muted);
+  border-bottom: 1px solid var(--tm-border);
+}
+
+.tm-provider-list li:last-child {
+  border-bottom: none;
+}
+
+.tm-provider-name {
+  color: var(--tm-text);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tm-provider-tokens,
+.tm-provider-cost,
+.tm-provider-share {
+  font-family: var(--tm-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.tm-provider-tokens {
+  font-weight: 600;
+  color: var(--tm-text);
+}
+
+.tm-provider-share {
+  min-width: 42px;
+  text-align: right;
+}
+
+.tm-provider-track {
+  grid-column: 2 / -1;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--tm-border);
+  overflow: hidden;
+}
+
+.tm-provider-fill {
+  display: block;
+  height: 100%;
+  background: var(--tm-accent);
+  border-radius: 2px;
+}

@@ -90,7 +90,7 @@
 
 .tm-model-legend li {
   display: grid;
-  grid-template-columns: 7px minmax(0, 1fr) auto auto;
+  grid-template-columns: 7px minmax(0, 1fr) auto auto auto;
   align-items: center;
   gap: 8px;
   font-size: 11px;
@@ -109,6 +109,14 @@
   font-variant-numeric: tabular-nums;
   font-weight: 600;
   color: var(--tm-text);
+}
+
+.tm-model-cost {
+  font-family: var(--tm-font-mono);
+  font-variant-numeric: tabular-nums;
+  min-width: 58px;
+  text-align: right;
+  color: var(--tm-text-muted);
 }
 
 .tm-model-share {

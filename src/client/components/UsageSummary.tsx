@@ -1,7 +1,7 @@
 import { useMemo, type FC } from 'react'
-import { formatNumber, formatPercent, formatTokens } from '../../shared/format'
+import { formatCurrency, formatNumber, formatPercent, formatTokens } from '../../shared/format'
 import type { MetricsSnapshot } from '../../shared/types'
-import { computeRangeStats, type TimeRange } from '../derived'
+import { computeRangeCost, computeRangeStats, dailyCostSeries, rangeDayKeys, type TimeRange } from '../derived'
 import { MetricTile } from './MetricTile'
 
 export interface UsageSummaryProps {
@@ -43,9 +43,17 @@ export const UsageSummary: FC<UsageSummaryProps> = ({ snapshot, range, onRangeCh
     }
   }, [snapshot.trend])
 
-  const rpm = stats.calls / stats.spanMinutes
-  const tpm = stats.totalTokens / stats.spanMinutes
-  const perCall = stats.calls > 0 ? stats.totalTokens / stats.calls : 0
+  // RPM / TPM 取最近 60 分钟的真实墙钟速率
+  const rpm = snapshot.rate.calls / snapshot.rate.windowMinutes
+  const tpm = snapshot.rate.tokens / snapshot.rate.windowMinutes
+
+  const cost = useMemo(() => {
+    const days = rangeDayKeys(snapshot, range)
+    return {
+      summary: computeRangeCost(snapshot, days),
+      series: dailyCostSeries(snapshot, days.slice(-30)),
+    }
+  }, [snapshot, range])
 
   // 失败统计未开启时没有分母，不能宣称成功率，只展示成功数
   const failuresKnown = snapshot.failedAttempts !== null
@@ -123,7 +131,7 @@ export const UsageSummary: FC<UsageSummaryProps> = ({ snapshot, range, onRangeCh
           series={recent.calls}
           color="#10b981"
         >
-          {t('metric.requests')} {formatNumber(stats.calls)}
+          {t('metric.lastHour')} {formatNumber(snapshot.rate.calls)}
         </MetricTile>
 
         <MetricTile
@@ -133,7 +141,7 @@ export const UsageSummary: FC<UsageSummaryProps> = ({ snapshot, range, onRangeCh
           series={recent.total}
           color="#f59e0b"
         >
-          {t('metric.tokens')} {formatTokens(stats.totalTokens)}
+          {t('metric.lastHour')} {formatTokens(snapshot.rate.tokens)}
         </MetricTile>
 
         <MetricTile
@@ -149,15 +157,19 @@ export const UsageSummary: FC<UsageSummaryProps> = ({ snapshot, range, onRangeCh
         </MetricTile>
 
         <MetricTile
-          label={t('metric.perCall')}
-          value={formatTokens(perCall)}
-          hint={t('metric.perCallHint')}
-          series={recent.total}
+          label={t('metric.cost')}
+          value={cost.summary.unavailable ? '—' : formatCurrency(cost.summary.total, 'USD')}
+          hint={
+            cost.summary.missing.length > 0
+              ? `${t('metric.costHint')} · ${t('metric.costMissing', { count: cost.summary.missing.length })}`
+              : t('metric.costHint')
+          }
+          series={cost.summary.unavailable ? undefined : cost.series}
           color="#06b6d4"
         >
-          {t('metric.activeDays')} {stats.activeDays}
-          <span className="tm-pill-gap" />
-          {t('stat.sessions')} {formatNumber(stats.sessionCount)}
+          {cost.summary.unavailable
+            ? t('metric.costUnavailable')
+            : `${t('metric.activeDays')} ${stats.activeDays}`}
         </MetricTile>
       </div>
     </section>

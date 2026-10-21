@@ -4,6 +4,8 @@ import type {
   MetricsSnapshot,
   ModelTrend,
   PluginConfig,
+  PricingTable,
+  RateSnapshot,
   RawTokenUsage,
   SessionEventRecordInput,
   SessionSummaryItem,
@@ -17,6 +19,7 @@ import {
   cacheHitRate,
   dayKey,
   emptyCounters,
+  finite,
   mergeCounters,
   sessionOrigin,
 } from '../shared/utils'
@@ -27,6 +30,11 @@ export interface LoggerLike {
   warn?: (msg: string) => void
   error?: (msg: string) => void
 }
+
+/** 分钟桶保留时长：足够算 60 分钟速率，又不会让账本膨胀。 */
+const RATE_RETENTION_MINUTES = 90
+/** RPM / TPM 的统计窗口。 */
+const RATE_WINDOW_MINUTES = 60
 
 export class TokenTracker {
   store: StoreData
@@ -68,6 +76,27 @@ export class TokenTracker {
     }
   }
 
+  private pricing: PricingTable = {}
+
+  private pricingFetchedAt: number | null = null
+
+  /** 价格表由宿主异步拉取后注入；未拿到时成本相关展示自动隐藏。 */
+  setPricing(pricing: PricingTable, fetchedAt: number | null): void {
+    this.pricing = pricing
+    this.pricingFetchedAt = fetchedAt
+    this.invalidateCache()
+  }
+
+  private buildRate(now: number): RateSnapshot {
+    const windowStart = Math.floor(now / 60_000) - RATE_WINDOW_MINUTES
+    const buckets = (this.store.recentMinutes ?? []).filter(item => item.minute > windowStart)
+    return {
+      windowMinutes: RATE_WINDOW_MINUTES,
+      calls: buckets.reduce((sum, item) => sum + item.calls, 0),
+      tokens: buckets.reduce((sum, item) => sum + item.tokens, 0),
+    }
+  }
+
   updateConfig(config: PluginConfig): void {
     this.config = config
     this.invalidateCache()
@@ -105,6 +134,9 @@ export class TokenTracker {
     const model = input.model || 'unknown'
     const modelKey = `${provider}/${model}`
     const usage = input.usage
+    const recordTokens =
+      finite(usage.totalTokens) ||
+      (finite(usage.inputTokens) + finite(usage.outputTokens) + finite(usage.cacheReadTokens) + finite(usage.cacheWriteTokens))
 
     // 1. Total
     addUsage(this.store.total, usage)
@@ -176,7 +208,20 @@ export class TokenTracker {
       addUsage(this.store.accounts[accId], usage)
     }
 
-    // 12. By Hour
+    // 12. 分钟桶：只保留最近 90 分钟，用于真实 RPM / TPM
+    const minuteKey = Math.floor(now / 60_000)
+    this.store.recentMinutes ??= []
+    const bucket = this.store.recentMinutes.find(item => item.minute === minuteKey)
+    if (bucket) {
+      bucket.calls += 1
+      bucket.tokens += recordTokens
+    } else {
+      this.store.recentMinutes.push({ minute: minuteKey, calls: 1, tokens: recordTokens })
+    }
+    const cutoffMinute = minuteKey - RATE_RETENTION_MINUTES
+    this.store.recentMinutes = this.store.recentMinutes.filter(item => item.minute >= cutoffMinute)
+
+    // 13. By Hour
     const hour = new Date(now).getHours()
     this.store.byHour ??= {}
     this.store.byHour[hour] ??= emptyCounters()
@@ -286,6 +331,7 @@ export class TokenTracker {
     this.store.byProject = {}
     this.store.byOrigin = {}
     this.store.byHour = {}
+    this.store.recentMinutes = []
     this.store.accounts = {}
     this.store.failedAttempts = { count: 0, inputTokens: 0, outputTokens: 0, totalTokens: 0, billable: 0 }
     this.dirty = true
@@ -470,6 +516,9 @@ export class TokenTracker {
         Object.entries(this.store.byOrigin).map(([origin, counters]) => [origin, withRate(counters)]),
       ),
       byHour: this.store.byHour ? { ...this.store.byHour } : {},
+      pricing: { ...this.pricing },
+      pricingFetchedAt: this.pricingFetchedAt,
+      rate: this.buildRate(now),
       failedAttempts: this.config.trackFailedAttempts ? { ...this.store.failedAttempts } : null,
       accounts: Object.fromEntries(
         Object.entries(this.store.accounts).map(([id, entry]) => [id, withRate(entry)]),

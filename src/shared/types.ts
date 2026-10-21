@@ -4,6 +4,25 @@
  * 宿主（Host）与客户端（Client）对齐使用本协议，避免隐式字段偏差与契约漂移。
  */
 
+/** 单位：美元 / token（OpenRouter 原始口径）。 */
+export interface ModelPrice {
+  input: number
+  output: number
+  cacheRead: number
+  cacheWrite: number
+  reasoning: number
+}
+
+/** 归一化模型名 → 单价。 */
+export type PricingTable = Record<string, ModelPrice>
+
+/** 最近一分钟粒度的速率快照。 */
+export interface RateSnapshot {
+  windowMinutes: number
+  calls: number
+  tokens: number
+}
+
 export interface TokenCounters {
   calls: number
   inputTokens: number
@@ -142,6 +161,11 @@ export interface MetricsSnapshot {
   byProject: Record<string, TokenCountersWithRate>
   byOrigin: Record<string, TokenCountersWithRate>
   byHour?: Record<number, TokenCounters>
+  /** 模型单价表；为空表示尚未取到价格，前端据此隐藏成本。 */
+  pricing: PricingTable
+  pricingFetchedAt: number | null
+  /** 最近一分钟粒度的速率，用于真实的 RPM / TPM。 */
+  rate: RateSnapshot
   failedAttempts: FailedAttemptsRecord | null
   accounts: Record<string, TokenCountersWithRate>
   currentAccount: AccountSnapshot | null
@@ -184,6 +208,8 @@ export interface StoreData {
   byProject: Record<string, TokenCounters>
   byOrigin: Record<string, TokenCounters>
   byHour?: Record<number, TokenCounters>
+  /** 最近若干分钟的调用与 Token 数，用于真实 RPM/TPM。 */
+  recentMinutes?: Array<{ minute: number; calls: number; tokens: number }>
   failedAttempts: FailedAttemptsRecord
   accounts: Record<string, TokenCounters>
   currentAccount: AccountSnapshot | null

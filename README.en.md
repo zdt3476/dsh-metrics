@@ -31,7 +31,11 @@ By intercepting internal model invocation events within the DSH host, it aggrega
 
 - 🎯 **Comprehensive Call Auditing**: Dual-channel event capture covering all `assistant/message` events, with waterfall interceptors for session title generation, memory compaction, and custom model streams.
 - 📊 **Multi-dimensional Breakdown**: Drill down into usage by **Model**, **Provider**, **Project directory (CWD)**, and **Session**, with in-container scrolling and sticky table headers for long lists.
-- 🧮 **Metric Tiles**: two primary tiles (requests with success rate / OK / failed, and total tokens with inline composition) plus four rate tiles (RPM, TPM, cache hit rate, per-call cost), each with a 30-day sparkline.
+- 🧮 **Metric Tiles**: two primary tiles (requests with success rate / OK / failed, and total tokens with inline composition) plus four tiles (RPM, TPM, cache hit rate, cost), each with a 30-day sparkline.
+- 💵 **Cost from OpenRouter pricing**: fetches and caches OpenRouter's public price list for 24 hours and prices input / output / cache-read / cache-write / reasoning separately; unpriced models are reported explicitly instead of counted as zero.
+- ⏱️ **Real RPM / TPM**: the ledger keeps per-minute counters for the last 90 minutes, so RPM / TPM are true wall-clock rates over the last 60 minutes.
+- 🗓️ **Token Activity Heatmap**: laid out as weekday × calendar week with month labels on top.
+- 🏢 **Provider Breakdown**: requests, tokens, cost and share bar per provider.
 - 🍩 **Model Usage Donut**: a donut share plus a legend list (model, usage, share) switchable between by-usage and by-calls.
 - 📈 **Multi-model Trend Chart**: one grouped line chart with legend and hover details, with automatically thinned time-axis labels.
 - ⚡ **Prompt Cache Efficiency**: Explicitly measures `cacheReadTokens` versus fresh input to calculate the exact cache hit rate, helping optimize prompt engineering and context costs.

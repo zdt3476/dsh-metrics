@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState, type FC } from 'react'
 import type { MetricsSnapshot, UpdateCheckResult } from '../../shared/types'
 import type { TimeRange } from '../derived'
 import { AccountCard } from './AccountCard'
+import { ActivityHeatmap } from './ActivityHeatmap'
+import { ProviderList } from './ProviderList'
 import { UsageRanking } from './UsageRanking'
 import { TrendChart } from './TrendChart'
 import { UpdateBanner } from './UpdateBanner'
@@ -168,6 +170,11 @@ export const TokenUsagePanel: FC<TokenUsagePanelProps> = ({ t }) => {
       <div className="tm-bottom-grid">
         <TrendChart trend={snapshot.trend} modelTrend={snapshot.modelTrend} t={t} />
         <UsageRanking snapshot={snapshot} t={t} />
+      </div>
+
+      <div className="tm-bottom-grid">
+        <ActivityHeatmap snapshot={snapshot} range={range} t={t} />
+        <ProviderList snapshot={snapshot} t={t} />
       </div>
 
       <div className="tm-footnote">

@@ -1,6 +1,7 @@
 import { useMemo, useState, type FC } from 'react'
-import { formatNumber, formatPercent, formatTokens } from '../../shared/format'
+import { formatCurrency, formatNumber, formatPercent, formatTokens } from '../../shared/format'
 import type { MetricsSnapshot, TokenCounters } from '../../shared/types'
+import { costOf, normalizeModelName } from '../../shared/utils'
 import { colorForName } from '../colors'
 import { DonutChart } from './DonutChart'
 
@@ -31,14 +32,21 @@ export const UsageRanking: FC<UsageRankingProps> = ({ snapshot, t }) => {
     const tail = sorted.slice(TOP_SLICES)
     const restValue = tail.reduce((acc, [, counters]) => acc + valueOf(counters), 0)
 
+    const costOfModel = (name: string, counters: TokenCounters): number | null => {
+      const price = snapshot.pricing[normalizeModelName(name)]
+      return price ? costOf(counters, price) : null
+    }
+
     const list = head.map(([name, counters]) => ({
       key: name,
       name,
       value: valueOf(counters),
       color: colorForName(name),
+      cost: costOfModel(name, counters),
     }))
     if (restValue > 0) {
-      list.push({ key: '__rest__', name: t('chart.groupRest'), value: restValue, color: '#94a3b8' })
+      const restCost = tail.reduce((sum, [name, counters]) => sum + (costOfModel(name, counters) ?? 0), 0)
+      list.push({ key: '__rest__', name: t('chart.groupRest'), value: restValue, color: '#94a3b8', cost: restCost })
     }
 
     return {
@@ -46,9 +54,10 @@ export const UsageRanking: FC<UsageRankingProps> = ({ snapshot, t }) => {
       rows: list,
       total: sum,
     }
-  }, [snapshot.byModelName, metric, t])
+  }, [snapshot.byModelName, snapshot.pricing, metric, t])
 
   const formatValue = (value: number) => (metric === 'calls' ? formatNumber(value) : formatTokens(value))
+  const showCost = Object.keys(snapshot.pricing).length > 0
 
   return (
     <section className="tm-model-usage">
@@ -89,6 +98,11 @@ export const UsageRanking: FC<UsageRankingProps> = ({ snapshot, t }) => {
                 <span className="tm-model-name" title={row.name}>
                   {row.name}
                 </span>
+                {showCost && (
+                  <span className="tm-model-cost">
+                    {row.cost === null ? '—' : formatCurrency(row.cost, 'USD')}
+                  </span>
+                )}
                 <span className="tm-model-value">{formatValue(row.value)}</span>
                 <span className="tm-model-share">{formatPercent(share, 1)}</span>
               </li>
