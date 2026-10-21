@@ -20,7 +20,7 @@ import { acquireTracker } from './tracker'
 import { PluginUpdater } from './updater'
 
 export const name = 'dsh-metrics'
-export const version = '0.4.0'
+export const version = '0.5.0'
 export { Config } from './config'
 
 const PACKAGE_DIR = fileURLToPath(new URL('../../', import.meta.url))
