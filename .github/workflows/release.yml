@@ -7,6 +7,8 @@ on:
 
 permissions:
   contents: write
+  # OIDC 令牌用于 npm trusted publishing，无需长期 token
+  id-token: write
 
 jobs:
   release:
@@ -53,3 +55,13 @@ jobs:
               --title "$GITHUB_REF_NAME" \
               --generate-notes
           fi
+
+      - name: Publish to npm
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          if npm view "@zdt3476/dsh-metrics@$version" version >/dev/null 2>&1; then
+            echo "npm 上已存在 @zdt3476/dsh-metrics@$version，跳过发布"
+            exit 0
+          fi
+          # lib/ 已在上面构建完成，避免 prepack 重复构建
+          npm publish --ignore-scripts --access public
