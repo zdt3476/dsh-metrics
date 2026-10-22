@@ -50,7 +50,19 @@ By intercepting internal model invocation events within the DSH host, it aggrega
 
 ## 📦 Installation
 
-### Method 1: Via DSH Plugin Manager (Recommended)
+### Method 1: One-line CLI install (Recommended)
+
+```bash
+dsh plugin --profile web add @zdt3476/dsh-metrics
+```
+
+Or install straight from source (no NPM needed):
+
+```bash
+dsh plugin --profile web add github:zdt3476/dsh-metrics
+```
+
+### Method 2: Via DSH Plugin Manager
 
 Run inside your DSH shell:
 
@@ -58,7 +70,7 @@ Run inside your DSH shell:
 plugin_manager install_bundle @zdt3476/dsh-metrics
 ```
 
-### Method 2: Manual Profile Setup
+### Method 3: Manual Profile Setup
 
 Add the dependency to your profile's `package.json` (e.g. `~/.dsh/profiles/web/package.json`):
 
@@ -70,7 +82,7 @@ Add the dependency to your profile's `package.json` (e.g. `~/.dsh/profiles/web/p
     }
   },
   "dependencies": {
-    "@zdt3476/dsh-metrics": "^0.3.0"
+    "@zdt3476/dsh-metrics": "^1.0.0"
   }
 }
 ```

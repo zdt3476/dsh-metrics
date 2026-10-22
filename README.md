@@ -50,7 +50,19 @@
 
 ## 📦 安装与启用
 
-### 方式一：通过 DSH 插件管理器（推荐）
+### 方式一：命令行一键安装（推荐）
+
+```bash
+dsh plugin --profile web add @zdt3476/dsh-metrics
+```
+
+也可以直接装源码（无需 NPM）：
+
+```bash
+dsh plugin --profile web add github:zdt3476/dsh-metrics
+```
+
+### 方式二：通过 DSH 插件管理器
 
 在 DSH 控制台中直接执行：
 
@@ -58,7 +70,7 @@
 plugin_manager install_bundle @zdt3476/dsh-metrics
 ```
 
-### 方式二：手动配置 Profile
+### 方式三：手动配置 Profile
 
 在你的 DSH Profile（如 `~/.dsh/profiles/web/package.json`）中添加依赖：
 
@@ -70,7 +82,7 @@ plugin_manager install_bundle @zdt3476/dsh-metrics
     }
   },
   "dependencies": {
-    "@zdt3476/dsh-metrics": "^0.3.0"
+    "@zdt3476/dsh-metrics": "^1.0.0"
   }
 }
 ```
