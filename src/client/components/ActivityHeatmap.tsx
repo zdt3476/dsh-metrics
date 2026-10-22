@@ -98,42 +98,41 @@ export const ActivityHeatmap: FC<ActivityHeatmapProps> = ({ snapshot, t }) => {
 
       <div className="tm-heatmap-wrap" ref={hostRef}>
         <div className="tm-heatmap-scroll" onMouseLeave={() => setTip(null)}>
-          <div className="tm-heatmap-inner">
-            <span />
-            <div className="tm-heatmap-months" style={{ gridTemplateColumns: `repeat(${weeks.length}, minmax(0, 1fr))` }}>
+          {/* 月份、星期与格子共用一个网格，行标签与格子的对齐由网格轨道保证 */}
+          <div className="tm-heatmap-board" style={{ gridTemplateColumns: `20px repeat(${weeks.length}, minmax(0, 1fr))` }}>
+            <span key="corner" />
             {weeks.map((_, weekIndex) => {
               const mark = monthMarks.find(item => item.weekIndex === weekIndex)
               return (
-                <span key={`m-${weekIndex}`} className="tm-heatmap-month">
+                <span key={`m-${weekIndex}`} className="tm-heatmap-month" style={{ gridColumn: weekIndex + 2, gridRow: 1 }}>
                   {mark ? mark.label : ''}
                 </span>
               )
             })}
-            </div>
-
-            <div className="tm-heatmap-weekdays">
-              {WEEKDAY_LABELS.map((label, row) => (
-                <span key={label}>{WEEKDAY_LABELED_ROWS.has(row) ? label : ''}</span>
-              ))}
-            </div>
-            <div className="tm-heatmap-grid">
-              {weeks.map((column, weekIndex) => (
-                <div key={`w-${weekIndex}`} className="tm-heatmap-col">
-                  {column.map((cell, rowIndex) =>
-                    cell === null ? (
-                      <i key={`e-${weekIndex}-${rowIndex}`} className="tm-heatmap-cell level-empty" />
-                    ) : (
-                      <i
-                        key={cell.day}
-                        className={`tm-heatmap-cell level-${cell.level}${cell.day === today ? ' is-today' : ''}`}
-                        aria-label={tipText(cell, t)}
-                        onMouseEnter={event => handleEnter(event, cell)}
-                      />
-                    ),
-                  )}
-                </div>
-              ))}
-            </div>
+            {WEEKDAY_LABELS.map((label, row) => (
+              <span key={label} className="tm-heatmap-weekday" style={{ gridColumn: 1, gridRow: row + 2 }}>
+                {WEEKDAY_LABELED_ROWS.has(row) ? label : ''}
+              </span>
+            ))}
+            {weeks.flatMap((column, weekIndex) =>
+              column.map((cell, rowIndex) =>
+                cell === null ? (
+                  <i
+                    key={`e-${weekIndex}-${rowIndex}`}
+                    className="tm-heatmap-cell level-empty"
+                    style={{ gridColumn: weekIndex + 2, gridRow: rowIndex + 2 }}
+                  />
+                ) : (
+                  <i
+                    key={cell.day}
+                    className={`tm-heatmap-cell level-${cell.level}${cell.day === today ? ' is-today' : ''}`}
+                    style={{ gridColumn: weekIndex + 2, gridRow: rowIndex + 2 }}
+                    aria-label={tipText(cell, t)}
+                    onMouseEnter={event => handleEnter(event, cell)}
+                  />
+                ),
+              ),
+            )}
           </div>
         </div>
 
@@ -144,14 +143,22 @@ export const ActivityHeatmap: FC<ActivityHeatmapProps> = ({ snapshot, t }) => {
             role="tooltip"
           >
             <div className="tm-tip-title">{formatDay(tip.cell.day, t)}</div>
-            <div className="tm-tip-row">
-              <span>tokens</span>
-              <b>{formatTokens(tip.cell.tokens)}</b>
-            </div>
-            <div className="tm-tip-row">
-              <span>{t('field.calls')}</span>
-              <b>{formatNumber(tip.cell.calls)}</b>
-            </div>
+            {tip.cell.tokens > 0 ? (
+              <>
+                <div className="tm-tip-row">
+                  <span>tokens</span>
+                  <b>{formatTokens(tip.cell.tokens)}</b>
+                </div>
+                <div className="tm-tip-row">
+                  <span>{t('field.calls')}</span>
+                  <b>{formatNumber(tip.cell.calls)}</b>
+                </div>
+              </>
+            ) : (
+              <div className="tm-tip-row">
+                <span>{t('activity.tipEmpty')}</span>
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -90,8 +90,9 @@ describe('ActivityHeatmap', () => {
   const html = renderToStaticMarkup(h(ActivityHeatmap, { snapshot, t }))
 
   it('渲染整年网格（53 周左右）而不是单列', () => {
-    const columns = html.match(/tm-heatmap-col/g) ?? []
-    expect(columns.length).toBeGreaterThanOrEqual(52)
+    const cells = html.match(/tm-heatmap-cell/g) ?? []
+    // 53 周 × 7 天 + 图例 5 个色块
+    expect(cells.length).toBeGreaterThanOrEqual(52 * 7)
   })
 
   it('只标注 一 / 三 / 五 三个行标签', () => {
@@ -106,7 +107,7 @@ describe('ActivityHeatmap', () => {
   })
 
   it('顶部有月份标签', () => {
-    const marks = html.match(/tm-heatmap-month">([^<]+)</g) ?? []
+    const marks = html.match(/tm-heatmap-month[^>]*>([^<]+)</g) ?? []
     expect(marks.length).toBeGreaterThan(1)
   })
 })

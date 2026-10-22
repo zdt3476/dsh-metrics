@@ -289,12 +289,16 @@
 
 /* 使用节奏：把热力图右侧的空间用结论填满，避免整块留白 */
 .tm-rhythm {
-  margin: 0;
+  margin: auto 0 0;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
   border-top: 1px solid var(--tm-border);
   padding-top: 12px;
+}
+
+.tm-rhythm dt {
+  margin-bottom: 4px;
 }
 
 @media (max-width: 720px) {
@@ -311,22 +315,16 @@
 .tm-rhythm dd {
   margin: 2px 0 0;
   font-family: var(--tm-font-mono);
-  font-size: 17px;
+  font-size: 19px;
   font-weight: 600;
   color: var(--tm-text);
 }
 
-.tm-heatmap-inner {
+.tm-heatmap-board {
   display: grid;
-  grid-template-columns: 20px minmax(0, 1fr);
-  column-gap: 6px;
-  row-gap: 4px;
-  min-width: 0;
-}
-
-.tm-heatmap-months {
-  display: grid;
-  gap: 2px;
+  grid-template-rows: auto repeat(7, minmax(10px, 20px));
+  column-gap: 2px;
+  row-gap: 2px;
   min-width: 0;
 }
 
@@ -336,35 +334,16 @@
   white-space: nowrap;
 }
 
-.tm-heatmap-weekdays {
-  display: grid;
-  grid-template-rows: repeat(7, minmax(0, 1fr));
+.tm-heatmap-weekday {
+  font-size: 11px;
+  color: var(--tm-text-muted);
+  display: flex;
   align-items: center;
 }
 
-.tm-heatmap-weekdays span {
-  font-size: 11px;
-  color: var(--tm-text-muted);
-}
-
-.tm-heatmap-grid {
-  display: flex;
-  gap: 2px;
-  min-width: 0;
-}
-
-.tm-heatmap-col {
-  flex: 1 1 0;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-/* 格子尺寸跟随列宽自适应（正方形），整年在半栏宽度内也能完整铺开 */
 .tm-heatmap-cell {
   width: 100%;
-  aspect-ratio: 1;
+  height: 100%;
   border-radius: 2px;
   display: block;
   background: var(--tm-heatmap-0, rgba(148, 163, 184, 0.18));
@@ -379,7 +358,7 @@
 }
 
 /* 悬停时描边，避免浅色格子在白底上看不出反馈 */
-.tm-heatmap-grid .tm-heatmap-cell:hover {
+.tm-heatmap-board .tm-heatmap-cell:hover {
   outline: 1.5px solid var(--tm-text);
   outline-offset: -1px;
 }
@@ -402,6 +381,7 @@
   align-items: center;
   justify-content: flex-end;
   gap: 4px;
+  margin: 0;
   font-size: 11.5px;
   color: var(--tm-text-muted);
 }
@@ -418,7 +398,8 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  flex: 1;
+  max-height: 300px;
+  flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
   scrollbar-width: thin;
