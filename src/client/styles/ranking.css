@@ -51,7 +51,9 @@
   justify-content: center;
   gap: 18px;
   min-width: 0;
-  flex: 1;
+  /* 填满等高拉伸后的卡片剩余空间，内容垂直居中 */
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 @media (max-width: 720px) {

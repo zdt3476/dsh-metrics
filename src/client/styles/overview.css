@@ -202,7 +202,7 @@
   align-items: start;
 }
 
-/* 热力图 + 供应商：左右两列并等高拉伸，53 周靠弹性格子塞进左列 */
+/* 左右两列并等高拉伸：热力图 + 供应商、趋势 + 模型用量两行共用 */
 .tm-bottom-split {
   grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
   align-items: stretch;

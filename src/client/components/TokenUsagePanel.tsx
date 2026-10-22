@@ -184,7 +184,7 @@ export const TokenUsagePanel: FC<TokenUsagePanelProps> = ({ t }) => {
 
       <UsageSummary snapshot={snapshot} range={range} onRangeChange={setRange} t={t} />
 
-      <div className="tm-bottom-grid">
+      <div className="tm-bottom-grid tm-bottom-split">
         <TrendChart trend={snapshot.trend} modelTrend={snapshot.modelTrend} t={t} />
         <UsageRanking snapshot={snapshot} t={t} />
       </div>
