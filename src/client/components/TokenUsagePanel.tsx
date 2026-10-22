@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type FC } from 'react'
 import type { MetricsSnapshot, UpdateCheckResult } from '../../shared/types'
 import type { TimeRange } from '../derived'
+import { loadTimeRange, saveTimeRange } from '../persist'
 import { AccountCard } from './AccountCard'
 import { ActivityHeatmap } from './ActivityHeatmap'
 import { ProviderList } from './ProviderList'
@@ -22,7 +23,8 @@ export const TokenUsagePanel: FC<TokenUsagePanelProps> = ({ t }) => {
   const [refreshInterval, setRefreshInterval] = useState<number>(30_000)
   const [updateInfo, setUpdateInfo] = useState<UpdateCheckResult | null>(null)
   const [updating, setUpdating] = useState(false)
-  const [range, setRange] = useState<TimeRange>('all')
+  // 面板切换界面时会被卸载，初值从 localStorage 恢复上次选择
+  const [range, setRange] = useState<TimeRange>(loadTimeRange)
   const refreshOptions = [
     { value: 10_000, label: '10s' },
     { value: 30_000, label: '30s' },
@@ -74,6 +76,10 @@ export const TokenUsagePanel: FC<TokenUsagePanelProps> = ({ t }) => {
     void loadData()
     void checkUpdate()
   }, [loadData, checkUpdate])
+
+  useEffect(() => {
+    saveTimeRange(range)
+  }, [range])
 
   useEffect(() => {
     if (refreshInterval <= 0) return

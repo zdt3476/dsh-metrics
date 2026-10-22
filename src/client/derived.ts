@@ -10,6 +10,9 @@ import { dayKey } from '../shared/utils'
 
 export type TimeRange = 'today' | '24h' | '3d' | '7d' | '30d' | 'all'
 
+/** 时间范围全集，顺序即界面上的排列顺序；也是持久化时的合法值白名单。 */
+export const TIME_RANGES: readonly TimeRange[] = ['today', '24h', '3d', '7d', '30d', 'all']
+
 const DAY_MS = 86_400_000
 const HOUR_MS = 3_600_000
 /** 「全部」范围下热力图至少铺满的周长，避免数据稀疏时网格塌缩成一列。 */

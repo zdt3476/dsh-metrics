@@ -8,6 +8,7 @@ import {
   dailyCostSeries,
   hourlyCostSeries,
   rangeDayKeys,
+  TIME_RANGES,
   type TimeRange,
 } from '../derived'
 import { MetricTile } from './MetricTile'
@@ -18,8 +19,6 @@ export interface UsageSummaryProps {
   onRangeChange: (range: TimeRange) => void
   t: (key: string, params?: Record<string, string | number>) => string
 }
-
-const RANGES: TimeRange[] = ['today', '24h', '3d', '7d', '30d', 'all']
 
 const RANGE_LABEL: Record<TimeRange, string> = {
   today: 'range.today',
@@ -89,7 +88,7 @@ export const UsageSummary: FC<UsageSummaryProps> = ({ snapshot, range, onRangeCh
       <header className="tm-metrics-head">
         <h2 className="tm-metrics-title">{t('summary.title')}</h2>
         <div className="tm-range-group" role="group" aria-label={t('summary.range')}>
-          {RANGES.map(value => (
+          {TIME_RANGES.map(value => (
             <button
               key={value}
               type="button"
