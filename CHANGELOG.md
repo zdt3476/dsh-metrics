@@ -4,6 +4,26 @@
 
 ---
 
+## [1.0.1] - 2026-10-22
+
+首个真正发布到 npm 的版本。
+
+### 🐛 修复 (Fixes)
+
+- **时间范围会重置**：切走用量面板再返回时总是回到「全部」。原因是面板卸载后组件内 state 丢失，现在写入 `localStorage`（键 `dsh-metrics.range`）并在挂载时恢复；读取按白名单校验，脏值回退默认值，`localStorage` 不可用时退化为不持久化。
+- **自动刷新间隔会重置**：同一根因，同样持久化（键 `dsh-metrics.refresh-interval`），「关闭自动刷新」这一非真值选项也能被记住。
+
+### ♻️ 内部 (Internal)
+
+- 时间范围全集与刷新间隔候选值收敛为单一常量（`TIME_RANGES` / `REFRESH_INTERVALS`），界面按钮与持久化白名单共用一份，避免新增档位时漏改。
+- 刷新间隔文案改由数值推导，不再维护「值 → 文案」两份可能漂移的数据。
+
+### 📦 发布 (Publishing)
+
+- 1.0.0 因 npm 于 2025-12-09 永久吊销全部 classic token 而未能发布，npm 首版顺延至此。
+
+---
+
 ## [1.0.0] - 2026-10-21
 
 首个稳定版本。至此统计口径、数据模型（`byDay` / 模型 × 日 / 小时桶 / 分钟桶）与页面结构均已收敛，后续版本以兼容演进为主。
@@ -21,7 +41,7 @@
 
 ### 📦 发布 (Publishing)
 
-- 正式以 `@zdt3476/dsh-metrics` 发布到 npm，携带 `dsh-plugin` 关键词供 DSH 插件市场收录。
+- 以 `@zdt3476/dsh-metrics` 为包名准备发布，携带 `dsh-plugin` 关键词供 DSH 插件市场收录；实际首发因 npm 凭证迁移顺延至 1.0.1。
 
 ---
 
@@ -126,6 +146,7 @@
 
 ---
 
+[1.0.1]: https://github.com/zdt3476/dsh-metrics/releases/tag/v1.0.1
 [1.0.0]: https://github.com/zdt3476/dsh-metrics/releases/tag/v1.0.0
 [0.6.0]: https://github.com/zdt3476/dsh-metrics/releases/tag/v0.6.0
 [0.5.0]: https://github.com/zdt3476/dsh-metrics/releases/tag/v0.5.0
