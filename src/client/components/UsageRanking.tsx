@@ -20,6 +20,8 @@ const TOP_SLICES = 5
  */
 export const UsageRanking: FC<UsageRankingProps> = ({ snapshot, t }) => {
   const [metric, setMetric] = useState<Metric>('tokens')
+  // 图与图例共用同一个高亮键，悬停任一侧另一侧同步响应
+  const [activeKey, setActiveKey] = useState<string | null>(null)
 
   const { slices, rows, total } = useMemo(() => {
     const entries = Object.entries(snapshot.byModelName) as Array<[string, TokenCounters]>
@@ -60,6 +62,31 @@ export const UsageRanking: FC<UsageRankingProps> = ({ snapshot, t }) => {
   const formatValue = (value: number) => (metric === 'calls' ? formatNumber(value) : formatTokens(value))
   const showCost = Object.keys(snapshot.pricing).length > 0
 
+  const tooltipFor = (key: string) => {
+    const row = rows.find(item => item.key === key)
+    if (!row) return null
+    const share = total > 0 ? row.value / total : 0
+    return (
+      <>
+        <div className="tm-tip-title">{row.name}</div>
+        <div className="tm-tip-row">
+          <span>{metric === 'calls' ? t('field.calls') : 'tokens'}</span>
+          <b>{formatValue(row.value)}</b>
+        </div>
+        <div className="tm-tip-row">
+          <span>{t('metric.share')}</span>
+          <b>{formatPercent(share, 1)}</b>
+        </div>
+        {showCost && (
+          <div className="tm-tip-row">
+            <span>{t('metric.cost')}</span>
+            <b>{row.cost === null ? '—' : formatCurrency(row.cost, 'USD')}</b>
+          </div>
+        )}
+      </>
+    )
+  }
+
   return (
     <section className="tm-model-usage">
       <header className="tm-card-head">
@@ -89,12 +116,20 @@ export const UsageRanking: FC<UsageRankingProps> = ({ snapshot, t }) => {
           slices={slices}
           centerValue={formatTokens(total)}
           centerLabel={metric === 'calls' ? t('field.calls') : 'tokens'}
+          activeKey={activeKey}
+          onActiveChange={setActiveKey}
+          tooltipFor={tooltipFor}
         />
         <ul className="tm-model-legend">
           {rows.map(row => {
             const share = total > 0 ? row.value / total : 0
             return (
-              <li key={row.key}>
+              <li
+                key={row.key}
+                className={activeKey === row.key ? 'is-active' : ''}
+                onMouseEnter={() => setActiveKey(row.key)}
+                onMouseLeave={() => setActiveKey(null)}
+              >
                 <i className="tm-legend-dot" style={{ background: row.color }} />
                 <span className="tm-model-name" title={row.name}>
                   {row.name}

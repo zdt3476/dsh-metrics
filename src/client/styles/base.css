@@ -40,3 +40,37 @@
 .tm-container * {
   box-sizing: border-box;
 }
+
+/* 图表悬停浮层：热力图 / 环形图 / 迷你线 / 趋势图共用 */
+.tm-tip {
+  position: absolute;
+  z-index: 4;
+  background: var(--tm-bg-card);
+  border: 1px solid var(--tm-border);
+  border-radius: 6px;
+  padding: 6px 9px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.16);
+  font-size: 12px;
+  line-height: 1.45;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.tm-tip-title {
+  font-weight: 600;
+  color: var(--tm-text-muted);
+  margin-bottom: 3px;
+}
+
+.tm-tip-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--tm-text);
+}
+
+.tm-tip-row b {
+  margin-left: auto;
+  font-family: var(--tm-font-mono);
+  font-variant-numeric: tabular-nums;
+}

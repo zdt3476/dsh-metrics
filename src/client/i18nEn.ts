@@ -19,6 +19,8 @@ export const DICT_EN: Record<string, string> = {
   'activity.less': 'Less',
   'activity.more': 'More',
   'metric.activity': 'Token Activity',
+  'metric.share': 'Share',
+  'activity.tipDate': '{month}/{day}',
   'metric.requests': 'Requests',
   'metric.tokens': 'Total Tokens',
   'metric.successRate': 'Success rate',

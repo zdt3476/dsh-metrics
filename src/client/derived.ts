@@ -44,6 +44,34 @@ const RANGE_DAYS: Record<Exclude<TimeRange, 'all' | '24h'>, number> = {
   '30d': 30,
 }
 
+/** 热力图固定展示最近 12 个自然月，与时间范围选择无关（GitHub 贡献图口径）。 */
+export const HEATMAP_MONTHS = 12
+
+/**
+ * 热力图的日期序列：起点回溯 12 个月并对其所在周的周一，终点补齐到本周周日，
+ * 使每一列都是完整自然周（周一为首日），未来日期由调用方标记为空白。
+ */
+export function heatmapDays(now = Date.now()): string[] {
+  const anchor = new Date(now)
+  anchor.setHours(0, 0, 0, 0)
+  const start = new Date(anchor)
+  start.setMonth(start.getMonth() - HEATMAP_MONTHS)
+  // getDay() 以周日为 0，换算成周一为 0 的偏移
+  const leading = (start.getDay() + 6) % 7
+  const trailing = 6 - ((anchor.getDay() + 6) % 7)
+  const startMs = start.getTime() - leading * DAY_MS
+  const endMs = anchor.getTime() + trailing * DAY_MS
+
+  // 用日历加一天而不是固定毫秒数，避免夏令时切换当天被跳过或重复
+  const days: string[] = []
+  const cursor = new Date(startMs)
+  while (cursor.getTime() <= endMs) {
+    days.push(dayKey(cursor))
+    cursor.setDate(cursor.getDate() + 1)
+  }
+  return days
+}
+
 /** 生成覆盖该范围的日期序列（升序，最后一项为今天）。 */
 export function rangeDayKeys(snapshot: MetricsSnapshot, range: TimeRange, now = Date.now()): string[] {
   const today = dayKey(now)

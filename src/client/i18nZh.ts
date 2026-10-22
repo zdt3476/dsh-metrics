@@ -19,6 +19,8 @@ export const DICT_ZH: Record<string, string> = {
   'activity.less': '少',
   'activity.more': '多',
   'metric.activity': 'Token 活动',
+  'metric.share': '占比',
+  'activity.tipDate': '{month} 月 {day} 日',
   'metric.requests': '请求总数',
   'metric.tokens': 'Token 总数',
   'metric.successRate': '成功率',

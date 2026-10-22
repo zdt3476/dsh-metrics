@@ -47,6 +47,7 @@ export const UsageSummary: FC<UsageSummaryProps> = ({ snapshot, range, onRangeCh
   const recent = useMemo(() => {
     const days = Object.keys(snapshot.trend).sort().slice(-30)
     return {
+      labels: days.map(day => day.slice(5)),
       total: days.map(day => snapshot.trend[day]?.totalTokens ?? 0),
       cache: days.map(day => (snapshot.trend[day]?.cacheHitRate ?? 0) * 100),
       calls: days.map(day => snapshot.trend[day]?.calls ?? 0),
@@ -59,15 +60,22 @@ export const UsageSummary: FC<UsageSummaryProps> = ({ snapshot, range, onRangeCh
 
   const cost = useMemo(() => {
     if (range === '24h') {
+      const hour = 3_600_000
+      const current = Math.floor(Date.now() / hour)
       return {
         summary: computeHourlyCost(snapshot),
         series: hourlyCostSeries(snapshot),
+        labels: Array.from({ length: 24 }, (_, index) =>
+          new Date((current - 23 + index) * hour).toLocaleTimeString(undefined, { hour: '2-digit' }),
+        ),
       }
     }
     const days = rangeDayKeys(snapshot, range)
+    const window = days.slice(-30)
     return {
       summary: computeRangeCost(snapshot, days),
-      series: dailyCostSeries(snapshot, days.slice(-30)),
+      series: dailyCostSeries(snapshot, window),
+      labels: window.map(day => day.slice(5)),
     }
   }, [snapshot, range])
 
@@ -108,6 +116,8 @@ export const UsageSummary: FC<UsageSummaryProps> = ({ snapshot, range, onRangeCh
           label={t('metric.requests')}
           value={formatNumber(stats.calls)}
           series={recent.calls}
+          seriesLabels={recent.labels}
+          seriesFormat={formatNumber}
           color="#3b82f6"
         >
           {failuresKnown && (
@@ -131,6 +141,8 @@ export const UsageSummary: FC<UsageSummaryProps> = ({ snapshot, range, onRangeCh
           label={t('metric.tokens')}
           value={formatTokens(stats.totalTokens)}
           series={recent.total}
+          seriesLabels={recent.labels}
+          seriesFormat={formatTokens}
           color="#8b5cf6"
         >
           {composition.map(item => (
@@ -145,6 +157,8 @@ export const UsageSummary: FC<UsageSummaryProps> = ({ snapshot, range, onRangeCh
           value={formatRate(rpm)}
           hint={t('metric.rpmHint')}
           series={recent.calls}
+          seriesLabels={recent.labels}
+          seriesFormat={formatNumber}
           color="#10b981"
         >
           {t('metric.lastHour')} {formatNumber(snapshot.rate.calls)}
@@ -155,6 +169,8 @@ export const UsageSummary: FC<UsageSummaryProps> = ({ snapshot, range, onRangeCh
           value={formatRate(tpm)}
           hint={t('metric.tpmHint')}
           series={recent.total}
+          seriesLabels={recent.labels}
+          seriesFormat={formatTokens}
           color="#f59e0b"
         >
           {t('metric.lastHour')} {formatTokens(snapshot.rate.tokens)}
@@ -165,6 +181,8 @@ export const UsageSummary: FC<UsageSummaryProps> = ({ snapshot, range, onRangeCh
           value={formatPercent(stats.cacheHitRate)}
           hint={t('metric.cacheHint')}
           series={recent.cache}
+          seriesLabels={recent.labels}
+          seriesFormat={value => formatPercent(value / 100)}
           color="#64748b"
         >
           {t('field.cacheRead')} {formatTokens(stats.cacheReadTokens)}
@@ -181,6 +199,8 @@ export const UsageSummary: FC<UsageSummaryProps> = ({ snapshot, range, onRangeCh
               : t('metric.costHint')
           }
           series={cost.summary.unavailable ? undefined : cost.series}
+          seriesLabels={cost.labels}
+          seriesFormat={value => formatCurrency(value, 'USD')}
           color="#06b6d4"
         >
           {cost.summary.unavailable

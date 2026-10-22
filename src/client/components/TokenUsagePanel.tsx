@@ -190,7 +190,7 @@ export const TokenUsagePanel: FC<TokenUsagePanelProps> = ({ t }) => {
       </div>
 
       <div className="tm-bottom-grid">
-        <ActivityHeatmap snapshot={snapshot} range={range} t={t} />
+        <ActivityHeatmap snapshot={snapshot} t={t} />
         <ProviderList snapshot={snapshot} t={t} />
       </div>
 

@@ -1,4 +1,4 @@
-import type { FC } from 'react'
+import { useRef, useState, type FC, type MouseEvent, type ReactNode } from 'react'
 
 export interface DonutSlice {
   key: string
@@ -13,18 +13,31 @@ export interface DonutChartProps {
   /** 环的外径像素。 */
   size?: number
   thickness?: number
+  /** 当前高亮的扇区，由外部持有以便图例与图形联动。 */
+  activeKey?: string | null
+  onActiveChange?: (key: string | null) => void
+  /** 高亮扇区的提示内容；不传则只有高亮没有浮层。 */
+  tooltipFor?: (key: string) => ReactNode
 }
 
 const TAU = Math.PI * 2
+/** 高亮时扇区加粗的像素数。 */
+const HOVER_GROW = 4
 
-/** 环形占比图：只画弧，标签由外部列表承担。 */
+/** 环形占比图：只画弧，标签由外部列表承担；悬停高亮并给出数值提示。 */
 export const DonutChart: FC<DonutChartProps> = ({
   slices,
   centerValue,
   centerLabel,
   size = 160,
   thickness = 26,
+  activeKey = null,
+  onActiveChange,
+  tooltipFor,
 }) => {
+  const hostRef = useRef<HTMLDivElement>(null)
+  const [pointer, setPointer] = useState<{ x: number; y: number } | null>(null)
+
   const total = slices.reduce((sum, slice) => sum + slice.value, 0)
   const radius = (size - thickness) / 2
   const center = size / 2
@@ -51,32 +64,61 @@ export const DonutChart: FC<DonutChartProps> = ({
     return { key: slice.key, color: slice.color, path, share }
   })
 
+  const handleMove = (event: MouseEvent<SVGPathElement>, key: string) => {
+    const host = hostRef.current?.getBoundingClientRect()
+    if (!host) return
+    onActiveChange?.(key)
+    setPointer({ x: event.clientX - host.left, y: event.clientY - host.top })
+  }
+
   return (
-    <svg
-      className="tm-donut"
-      viewBox={`0 0 ${size} ${size}`}
-      width={size}
-      height={size}
-      role="img"
-      aria-label={`${centerLabel} ${centerValue}`}
+    <div
+      className="tm-donut-wrap"
+      ref={hostRef}
+      onMouseLeave={() => {
+        onActiveChange?.(null)
+        setPointer(null)
+      }}
     >
-      <circle cx={center} cy={center} r={radius} fill="none" stroke="var(--tm-border)" strokeWidth={thickness} opacity="0.35" />
-      {arcs.map(arc => (
-        <path
-          key={arc.key}
-          d={arc.path}
-          fill="none"
-          stroke={arc.color}
-          strokeWidth={thickness}
-          strokeLinecap="butt"
-        />
-      ))}
-      <text x={center} y={center - 2} textAnchor="middle" className="tm-donut-value">
-        {centerValue}
-      </text>
-      <text x={center} y={center + 16} textAnchor="middle" className="tm-donut-label">
-        {centerLabel}
-      </text>
-    </svg>
+      <svg
+        className="tm-donut"
+        viewBox={`0 0 ${size} ${size}`}
+        width={size}
+        height={size}
+        role="img"
+        aria-label={`${centerLabel} ${centerValue}`}
+      >
+        <circle cx={center} cy={center} r={radius} fill="none" stroke="var(--tm-border)" strokeWidth={thickness} opacity="0.35" />
+        {arcs.map(arc => {
+          const active = activeKey === arc.key
+          const dimmed = activeKey !== null && !active
+          return (
+            <path
+              key={arc.key}
+              d={arc.path}
+              fill="none"
+              stroke={arc.color}
+              strokeWidth={active ? thickness + HOVER_GROW : thickness}
+              strokeLinecap="butt"
+              opacity={dimmed ? 0.35 : 1}
+              className="tm-donut-arc"
+              onMouseMove={event => handleMove(event, arc.key)}
+            />
+          )
+        })}
+        <text x={center} y={center - 2} textAnchor="middle" className="tm-donut-value">
+          {centerValue}
+        </text>
+        <text x={center} y={center + 16} textAnchor="middle" className="tm-donut-label">
+          {centerLabel}
+        </text>
+      </svg>
+
+      {activeKey && tooltipFor && pointer && (
+        <div className="tm-tip tm-donut-tip" style={{ left: `${pointer.x}px`, top: `${pointer.y}px` }} role="tooltip">
+          {tooltipFor(activeKey)}
+        </div>
+      )}
+    </div>
   )
 }

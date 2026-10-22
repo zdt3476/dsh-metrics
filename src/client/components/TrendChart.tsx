@@ -177,10 +177,10 @@ export const TrendChart: FC<TrendChartProps> = ({ trend, modelTrend, t }) => {
         </svg>
 
         {hover !== null && (
-          <div className="tm-trend-tip" style={{ left: `${(xOf(hover) / VIEW_WIDTH) * 100}%` }}>
-            <div className="tm-trend-tip-day">{days[hover]}</div>
+          <div className="tm-tip tm-trend-tip" style={{ left: `${(xOf(hover) / VIEW_WIDTH) * 100}%` }}>
+            <div className="tm-tip-title">{days[hover]}</div>
             {series.map(item => (
-              <div key={`tip-${item.key}`} className="tm-trend-tip-row">
+              <div key={`tip-${item.key}`} className="tm-tip-row">
                 <i className="tm-legend-dot" style={{ background: item.color }} />
                 <span>{item.label}</span>
                 <b>{formatTokens(item.values[hover] ?? 0)}</b>
