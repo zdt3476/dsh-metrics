@@ -98,8 +98,9 @@ export const ActivityHeatmap: FC<ActivityHeatmapProps> = ({ snapshot, t }) => {
 
       <div className="tm-heatmap-wrap" ref={hostRef}>
         <div className="tm-heatmap-scroll" onMouseLeave={() => setTip(null)}>
-          <div className="tm-heatmap-months" style={{ gridTemplateColumns: `26px repeat(${weeks.length}, 14px)` }}>
+          <div className="tm-heatmap-inner">
             <span />
+            <div className="tm-heatmap-months" style={{ gridTemplateColumns: `repeat(${weeks.length}, minmax(0, 1fr))` }}>
             {weeks.map((_, weekIndex) => {
               const mark = monthMarks.find(item => item.weekIndex === weekIndex)
               return (
@@ -108,9 +109,8 @@ export const ActivityHeatmap: FC<ActivityHeatmapProps> = ({ snapshot, t }) => {
                 </span>
               )
             })}
-          </div>
+            </div>
 
-          <div className="tm-heatmap-body">
             <div className="tm-heatmap-weekdays">
               {WEEKDAY_LABELS.map((label, row) => (
                 <span key={label}>{WEEKDAY_LABELED_ROWS.has(row) ? label : ''}</span>
