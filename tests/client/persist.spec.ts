@@ -1,6 +1,14 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { TIME_RANGES } from '../../src/client/derived'
-import { loadTimeRange, parseTimeRange, saveTimeRange } from '../../src/client/persist'
+import {
+  loadRefreshInterval,
+  loadTimeRange,
+  parseRefreshInterval,
+  parseTimeRange,
+  REFRESH_INTERVALS,
+  saveRefreshInterval,
+  saveTimeRange,
+} from '../../src/client/persist'
 
 /** 最小 Storage 替身：node 环境默认没有 localStorage。 */
 function installStorage(initial: Record<string, string> = {}): Map<string, string> {
@@ -63,5 +71,40 @@ describe('时间范围持久化', () => {
     removeStorage()
     expect(loadTimeRange()).toBe('all')
     expect(() => saveTimeRange('3d')).not.toThrow()
+  })
+})
+
+describe('刷新间隔持久化', () => {
+  it('接受全部候选值', () => {
+    for (const interval of REFRESH_INTERVALS) {
+      expect(parseRefreshInterval(String(interval))).toBe(interval)
+    }
+  })
+
+  it('拒绝空值与非候选值', () => {
+    for (const raw of [null, undefined, '', '5', 'abc', '30000.5', '-1']) {
+      expect(parseRefreshInterval(raw)).toBeNull()
+    }
+  })
+
+  it('退出再进入后保留上次选择（含关闭自动刷新）', () => {
+    installStorage()
+    saveRefreshInterval(0)
+    expect(loadRefreshInterval()).toBe(0)
+    saveRefreshInterval(60_000)
+    expect(loadRefreshInterval()).toBe(60_000)
+  })
+
+  it('无记录或脏值时回退到 30s', () => {
+    installStorage()
+    expect(loadRefreshInterval()).toBe(30_000)
+    installStorage({ 'dsh-metrics.refresh-interval': '2000' })
+    expect(loadRefreshInterval()).toBe(30_000)
+  })
+
+  it('localStorage 不可用时不抛错且回退默认值', () => {
+    removeStorage()
+    expect(loadRefreshInterval()).toBe(30_000)
+    expect(() => saveRefreshInterval(10_000)).not.toThrow()
   })
 })

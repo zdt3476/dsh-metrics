@@ -1,7 +1,13 @@
 import { useCallback, useEffect, useState, type FC } from 'react'
 import type { MetricsSnapshot, UpdateCheckResult } from '../../shared/types'
 import type { TimeRange } from '../derived'
-import { loadTimeRange, saveTimeRange } from '../persist'
+import {
+  loadRefreshInterval,
+  loadTimeRange,
+  REFRESH_INTERVALS,
+  saveRefreshInterval,
+  saveTimeRange,
+} from '../persist'
 import { AccountCard } from './AccountCard'
 import { ActivityHeatmap } from './ActivityHeatmap'
 import { ProviderList } from './ProviderList'
@@ -9,6 +15,12 @@ import { UsageRanking } from './UsageRanking'
 import { TrendChart } from './TrendChart'
 import { UpdateBanner } from './UpdateBanner'
 import { UsageSummary } from './UsageSummary'
+
+/** 间隔文案由数值推导，避免候选值与文案各写一份后漂移。 */
+function refreshLabel(value: number, t: TokenUsagePanelProps['t']): string {
+  if (value <= 0) return t('refresh.off')
+  return value >= 60_000 ? `${value / 60_000}m` : `${value / 1_000}s`
+}
 
 export interface TokenUsagePanelProps {
   t: (key: string, params?: Record<string, string | number>) => string
@@ -20,17 +32,15 @@ export const TokenUsagePanel: FC<TokenUsagePanelProps> = ({ t }) => {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [refreshInterval, setRefreshInterval] = useState<number>(30_000)
+  const [refreshInterval, setRefreshInterval] = useState<number>(loadRefreshInterval)
   const [updateInfo, setUpdateInfo] = useState<UpdateCheckResult | null>(null)
   const [updating, setUpdating] = useState(false)
   // 面板切换界面时会被卸载，初值从 localStorage 恢复上次选择
   const [range, setRange] = useState<TimeRange>(loadTimeRange)
-  const refreshOptions = [
-    { value: 10_000, label: '10s' },
-    { value: 30_000, label: '30s' },
-    { value: 60_000, label: '1m' },
-    { value: 0, label: t('refresh.off') },
-  ]
+  const refreshOptions = REFRESH_INTERVALS.map(value => ({
+    value,
+    label: refreshLabel(value, t),
+  }))
 
   const loadData = useCallback(async (isManual = false) => {
     if (isManual) setRefreshing(true)
@@ -79,7 +89,8 @@ export const TokenUsagePanel: FC<TokenUsagePanelProps> = ({ t }) => {
 
   useEffect(() => {
     saveTimeRange(range)
-  }, [range])
+    saveRefreshInterval(refreshInterval)
+  }, [range, refreshInterval])
 
   useEffect(() => {
     if (refreshInterval <= 0) return
