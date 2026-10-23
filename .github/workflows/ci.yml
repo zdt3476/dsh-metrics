@@ -40,3 +40,11 @@ jobs:
 
       - name: Verify build bundle
         run: pnpm run build
+
+      # 提交的 lib/ 必须与源码构建结果一致，防止「改了源码忘了重新构建」被发布出去
+      - name: Assert lib/ is up to date
+        run: |
+          if ! git diff --exit-code -- lib; then
+            echo "::error::lib/ 与 src 构建结果不一致：请先 pnpm run build 再提交"
+            exit 1
+          fi
