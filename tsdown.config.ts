@@ -1,4 +1,3 @@
-import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { isBuiltin } from 'node:module'
@@ -8,50 +7,18 @@ import { defineConfig } from 'tsdown'
 
 const pkg = JSON.parse(readFileSync(join(process.cwd(), 'package.json'), 'utf8'))
 
-interface GitState {
-  commit: string
-  branch: string
-  date: string
-  dirty: boolean
-}
-
-function readGitState(): GitState | undefined {
-  try {
-    const run = (...args: string[]): string =>
-      execFileSync('git', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim()
-    return {
-      commit: run('rev-parse', '--short=12', 'HEAD'),
-      branch: run('branch', '--show-current'),
-      date: run('show', '-s', '--format=%cI', 'HEAD'),
-      dirty: run('status', '--porcelain') !== '',
-    }
-  } catch {
-    return undefined
-  }
-}
-
-function localIsoNow(): string {
-  const now = new Date()
-  const pad = (v: number) => String(v).padStart(2, '0')
-  const offsetMinutes = -now.getTimezoneOffset()
-  const sign = offsetMinutes >= 0 ? '+' : '-'
-  const offset = `${sign}${pad(Math.floor(Math.abs(offsetMinutes) / 60))}:${pad(Math.abs(offsetMinutes) % 60)}`
-  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}${offset}`
-}
-
+/**
+ * 构建横幅只保留与构建环境无关的静态信息（名称 / 版本 / 描述 / 许可证）。
+ * 时间戳与 git 状态会让同一份源码产生不同产物，破坏可复现构建，
+ * 也会让 CI 的「lib 与源码一致」闸门永远无法通过；版本与出处由 package.json 和 git 标签承担。
+ */
 function artifactBanner(): string {
-  const git = readGitState()
   const lines = [
     ` * ${pkg.name} v${pkg.version}`,
     ` * ${pkg.description}`,
     ` * @author ${pkg.author}`,
     ` * @license ${pkg.license}`,
-    ` * @built ${localIsoNow()}`,
   ]
-  if (git !== undefined) {
-    lines.push(` * @commit ${git.commit}${git.dirty ? ' (dirty working tree)' : ''}${git.branch === '' ? '' : ` on ${git.branch}`}`)
-    lines.push(` * @commit-date ${git.date}`)
-  }
   return ['/**', ...lines, ' */', ''].join('\n')
 }
 
