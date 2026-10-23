@@ -68,7 +68,12 @@ jobs:
             exit 0
           fi
           # lib/ 已在上面构建完成，避免 prepack 重复构建
-          npm publish --ignore-scripts --access public
+          if npm publish --ignore-scripts --access public; then
+            echo "直接发布成功"
+          else
+            echo "直接发布被拒（多为 Trusted Publisher 未允许 npm publish），转 stage publish 等待人工批准"
+            npm stage publish --ignore-scripts --access public
+          fi
 
       # 诊断：发布失败时解码 OIDC claims，核对 npm Trusted Publisher 配置字段
       - name: Debug OIDC claims on failure
