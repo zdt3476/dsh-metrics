@@ -75,27 +75,3 @@ jobs:
             npm stage publish --ignore-scripts --access public
           fi
 
-      # 诊断：发布失败时解码 OIDC claims，核对 npm Trusted Publisher 配置字段
-      - name: Debug OIDC claims on failure
-        if: failure()
-        run: |
-          node -e "
-          const url = process.env.ACTIONS_ID_TOKEN_REQUEST_URL
-          const token = process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN
-          if (!url || !token) { console.log('无 OIDC 环境变量'); process.exit(0) }
-          fetch(url + '&audience=npm:registry.npmjs.org', { headers: { Authorization: 'Bearer ' + token } })
-            .then(r => r.json())
-            .then(async ({ value }) => {
-              const [, payload] = value.split('.')
-              const claims = JSON.parse(Buffer.from(payload, 'base64').toString())
-              console.log('OIDC claims:', JSON.stringify(claims, null, 2))
-              // 用同一令牌直接调 npm 交换端点，打印 npm 的原始拒绝原因
-              const res = await fetch('https://registry.npmjs.org/-/npm/v1/oidc/token/exchange/package/@zdt3476%2fdsh-metrics', {
-                method: 'POST',
-                headers: { 'content-type': 'application/json', authorization: 'Bearer ' + value },
-                body: JSON.stringify({})
-              })
-              console.log('exchange status:', res.status)
-              console.log('exchange body:', await res.text())
-            })
-          "
