@@ -48,6 +48,9 @@ jobs:
           echo "releasing v$version"
 
       - name: Create GitHub Release
+        # 只对标签发布建 Release：workflow_dispatch 从分支触发时 GITHUB_REF_NAME 是分支名，
+        # 曾因此误建名为 main 的 Release 与同名标签
+        if: startsWith(github.ref, 'refs/tags/')
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -67,11 +70,7 @@ jobs:
             echo "npm 上已存在 @zdt3476/dsh-metrics@$version，跳过发布"
             exit 0
           fi
-          # lib/ 已在上面构建完成，避免 prepack 重复构建
-          if npm publish --ignore-scripts --access public; then
-            echo "直接发布成功"
-          else
-            echo "直接发布被拒（多为 Trusted Publisher 未允许 npm publish），转 stage publish 等待人工批准"
-            npm stage publish --ignore-scripts --access public
-          fi
+          # lib/ 已在上面构建完成，避免 prepack 重复构建。
+          # 不回落 stage publish：staging 需要人工批准，静默回落会让流程显示成功而版本并未上线。
+          npm publish --ignore-scripts --access public
 
