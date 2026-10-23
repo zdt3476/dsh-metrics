@@ -452,13 +452,14 @@ export class TokenTracker {
 
     const days = Object.keys(this.store.byDay).sort()
 
-    // 按模型拆分的每日序列
-    const dayList = Object.keys(this.store.byDayModelName ?? {}).sort()
+    // 按模型拆分的每日序列。键沿用 byModel 的 `provider/model` 形式：
+    // 供应商维度的区间统计与成本都需要它，只保留模型名会丢掉供应商信息。
+    const dayList = Object.keys(this.store.byDayModel ?? {}).sort()
     const byModelDay: Record<string, Record<string, TokenCountersWithRate>> = {}
     for (const day of dayList) {
-      for (const [name, counters] of Object.entries(this.store.byDayModelName[day] ?? {})) {
-        byModelDay[name] ??= {}
-        byModelDay[name][day] = withRate(counters)
+      for (const [modelKey, counters] of Object.entries(this.store.byDayModel[day] ?? {})) {
+        byModelDay[modelKey] ??= {}
+        byModelDay[modelKey][day] = withRate(counters)
       }
     }
 

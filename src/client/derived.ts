@@ -4,7 +4,7 @@
  * 这些计算同时被总览卡片与活跃度热力图使用，集中在此以保证两者口径一致。
  */
 
-import type { MetricsSnapshot, TokenCounters } from '../shared/types'
+import type { MetricsSnapshot, TokenCounters, TokenCountersWithRate } from '../shared/types'
 import { cacheHitRate, costOf, emptyCounters, mergeCounters, resolveModelKey } from '../shared/utils'
 import { dayKey } from '../shared/utils'
 
@@ -339,6 +339,82 @@ export function dailyCostSeries(snapshot: MetricsSnapshot, days: string[]): numb
 function windowedHours(snapshot: MetricsSnapshot, now = Date.now()) {
   const windowStart = Math.floor((now - 24 * HOUR_MS) / HOUR_MS)
   return snapshot.recentHours.filter(bucket => bucket.hour >= windowStart)
+}
+
+/** `provider/model` 形式的键拆成两段；没有斜杠时按未知供应商处理。 */
+export function splitModelKey(key: string): { provider: string; model: string } {
+  const slash = key.indexOf('/')
+  if (slash <= 0) return { provider: 'unknown', model: key }
+  return { provider: key.slice(0, slash), model: key.slice(slash + 1) }
+}
+
+/**
+ * 某范围内按 `provider/model` 聚合的计数，键与 snapshot.byModel 同口径。
+ *
+ * 模型用量与供应商明细都从这一份结果派生：日级范围走 byModelDay，
+ * 「24 小时」走按模型拆分的小时桶，两条路径都保留供应商信息。
+ */
+export function rangeModelKeyCounters(
+  snapshot: MetricsSnapshot,
+  range: TimeRange,
+  now = Date.now(),
+): Map<string, TokenCounters> {
+  const totals = new Map<string, TokenCounters>()
+  const add = (key: string, counters: Partial<TokenCounters> | undefined): void => {
+    if (!counters) return
+    const acc = totals.get(key) ?? emptyCounters()
+    mergeCounters(acc, counters)
+    totals.set(key, acc)
+  }
+
+  if (range === '24h') {
+    for (const bucket of windowedHours(snapshot, now)) {
+      for (const [key, counters] of Object.entries(bucket.byModel)) add(key, counters)
+    }
+    return totals
+  }
+
+  for (const day of rangeDayKeys(snapshot, range, now)) {
+    for (const [key, byDay] of Object.entries(snapshot.byModelDay ?? {})) {
+      add(key, byDay[day])
+    }
+  }
+  return totals
+}
+
+/** 把 `provider/model` 结果按维度合并成一行一条，并补上缓存命中率。 */
+export function groupCounters(
+  totals: Map<string, TokenCounters>,
+  dimension: 'model' | 'provider',
+): Map<string, TokenCountersWithRate> {
+  const grouped = new Map<string, TokenCounters>()
+  for (const [key, counters] of totals) {
+    const name = splitModelKey(key)[dimension]
+    const acc = grouped.get(name) ?? emptyCounters()
+    mergeCounters(acc, counters)
+    grouped.set(name, acc)
+  }
+  return new Map(
+    [...grouped].map(([name, counters]) => [name, { ...counters, cacheHitRate: cacheHitRate(counters) }]),
+  )
+}
+
+/**
+ * 每个 `provider/model` 键在区间内的成本；缺价格的键记为 null。
+ * 供应商与模型的成本都由它汇总，避免两处各算一遍价格匹配。
+ */
+export function costByModelKey(
+  snapshot: MetricsSnapshot,
+  totals: Map<string, TokenCounters>,
+): Map<string, number | null> {
+  const cost = new Map<string, number | null>()
+  for (const [key, counters] of totals) {
+    if ((counters.totalTokens ?? 0) <= 0) continue
+    const priceKey = resolveModelKey(snapshot.pricing, splitModelKey(key).model)
+    const price = priceKey ? snapshot.pricing[priceKey] : undefined
+    cost.set(key, price ? costOf(counters, price) : null)
+  }
+  return cost
 }
 
 /** 滚动 24 小时的成本：用小时桶里的按模型拆分，逐模型计价。 */

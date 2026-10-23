@@ -457,6 +457,7 @@ interface MetricsSnapshot {
     maxTrendSeries: number;
   };
   byDay: Record<string, TokenCounters>;
+  /** 日 → `provider/model`（与 byModel 同口径）→ 计数；非 24 小时范围的模型/供应商区间统计都读它。 */
   byModelDay: Record<string, Record<string, TokenCountersWithRate>>;
   modelTrend: ModelTrend;
   byProvider: Record<string, TokenCounters>;

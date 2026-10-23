@@ -186,12 +186,12 @@ export const TokenUsagePanel: FC<TokenUsagePanelProps> = ({ t }) => {
 
       <div className="tm-bottom-grid tm-bottom-split">
         <TrendChart trend={snapshot.trend} modelTrend={snapshot.modelTrend} t={t} />
-        <UsageRanking snapshot={snapshot} t={t} />
+        <UsageRanking snapshot={snapshot} range={range} t={t} />
       </div>
 
       <div className="tm-bottom-grid tm-bottom-split">
         <ActivityHeatmap snapshot={snapshot} t={t} />
-        <ProviderList snapshot={snapshot} t={t} />
+        <ProviderList snapshot={snapshot} range={range} t={t} />
       </div>
 
       <div className="tm-footnote">

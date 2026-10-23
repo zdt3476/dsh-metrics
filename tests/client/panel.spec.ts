@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { UsageRanking } from '../../src/client/components/UsageRanking'
 import { TrendChart } from '../../src/client/components/TrendChart'
 import { UsageSummary } from '../../src/client/components/UsageSummary'
+import { ProviderList } from '../../src/client/components/ProviderList'
 import { createTranslator } from '../../src/client/i18n'
 import type { MetricsSnapshot } from '../../src/shared/types'
 import { emptyCounters } from '../../src/shared/utils'
@@ -58,8 +59,9 @@ const snapshot: MetricsSnapshot = {
   rate: { windowMinutes: 60, calls: 120, tokens: 900_000 },
   recentHours: [],
   byModelDay: {
-    'deepseek-v4.1': {
+    'deepseek/deepseek-v4.1': {
       [key(0)]: { ...counters(100_000, 400, 60_000), cacheHitRate: 0.5 },
+      [key(1)]: { ...counters(300_000, 1_500, 200_000), cacheHitRate: 0.5 },
     },
   },
   modelTrend: {
@@ -151,7 +153,7 @@ describe('UsageRanking', () => {
   const zh = createTranslator('zh')
 
   it('renders a donut with a legend list and a metric switch', () => {
-    const html = renderToStaticMarkup(h(UsageRanking, { snapshot, t: zh }))
+    const html = renderToStaticMarkup(h(UsageRanking, { snapshot, range: 'all', t: zh }))
 
     expect(html).toContain('模型用量')
     expect(html).toContain('tm-donut')
@@ -164,6 +166,25 @@ describe('UsageRanking', () => {
     // 列表展示模型名与占比
     expect(html).toContain('deepseek-v4.1')
     expect(html).toContain('%')
+  })
+
+  it('环图与图例随统计范围重新聚合', () => {
+    const all = renderToStaticMarkup(h(UsageRanking, { snapshot, range: 'all', t: zh }))
+    const today = renderToStaticMarkup(h(UsageRanking, { snapshot, range: 'today', t: zh }))
+
+    // 夹具：今天 100k，昨天 300k → 全部 400k
+    expect(all).toContain('400k')
+    expect(today).toContain('100k')
+    expect(today).not.toContain('400k')
+  })
+
+  it('供应商明细随统计范围重新聚合', () => {
+    const all = renderToStaticMarkup(h(ProviderList, { snapshot, range: 'all', t: zh }))
+    const today = renderToStaticMarkup(h(ProviderList, { snapshot, range: 'today', t: zh }))
+
+    expect(all).toContain('400k')
+    expect(today).toContain('100k')
+    expect(today).not.toContain('400k')
   })
 })
 

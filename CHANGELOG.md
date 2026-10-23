@@ -2,6 +2,13 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 规范，版本号遵循 [语义化版本 2.0.0](https://semver.org/lang/zh-CN/)。
 
+## [未发布]
+
+### 🐛 修复 (Fixes)
+
+- **模型用量与供应商明细不跟随时间范围**：两块卡片此前读全量聚合（`byModelName` / `byProvider`），切「今天 / 7 天」等范围时数字不变。现在都按所选范围重新聚合：「24 小时」走按模型拆分的小时桶，其余范围走日级明细。
+- 快照的 `byModelDay` 键改为 `provider/model`（与 `byModel` 同口径），使供应商维度的区间统计与成本可算；价格匹配仍按模型名进行，不受影响。
+
 ## [1.0.2] - 2026-10-23
 
 ### ✨ 图表交互 (Charts)

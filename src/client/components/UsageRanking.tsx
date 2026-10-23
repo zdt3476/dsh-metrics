@@ -1,12 +1,14 @@
 import { useMemo, useState, type FC } from 'react'
 import { formatCurrency, formatNumber, formatPercent, formatTokens } from '../../shared/format'
 import type { MetricsSnapshot, TokenCounters } from '../../shared/types'
-import { costOf, resolveModelKey } from '../../shared/utils'
 import { colorForName } from '../colors'
+import { costByModelKey, groupCounters, rangeModelKeyCounters, splitModelKey, type TimeRange } from '../derived'
 import { DonutChart } from './DonutChart'
 
 export interface UsageRankingProps {
   snapshot: MetricsSnapshot
+  /** 统计范围：环图与列表都按该范围重新聚合。 */
+  range: TimeRange
   t: (key: string, params?: Record<string, string | number>) => string
 }
 
@@ -18,37 +20,44 @@ const TOP_SLICES = 5
  * 模型用量：左侧环形图给整体形状，右侧列表给精确数值。
  * 切换「按用量 / 按调用」时图与列表同步换口径，避免两套排序各自为政。
  */
-export const UsageRanking: FC<UsageRankingProps> = ({ snapshot, t }) => {
+export const UsageRanking: FC<UsageRankingProps> = ({ snapshot, range, t }) => {
   const [metric, setMetric] = useState<Metric>('tokens')
   // 图与图例共用同一个高亮键，悬停任一侧另一侧同步响应
   const [activeKey, setActiveKey] = useState<string | null>(null)
 
   const { slices, rows, total } = useMemo(() => {
-    const entries = Object.entries(snapshot.byModelName) as Array<[string, TokenCounters]>
     const valueOf = (counters: TokenCounters) => (metric === 'calls' ? counters.calls : counters.totalTokens)
 
-    const sorted = [...entries].sort((a, b) => valueOf(b[1]) - valueOf(a[1]))
+    // 区间明细按 provider/model 取，成本也在这层算好，模型名的成本由各 provider 相加
+    const byKey = rangeModelKeyCounters(snapshot, range)
+    const costOfKey = costByModelKey(snapshot, byKey)
+    const costOfModel = (name: string): number | null => {
+      let sum = 0
+      let priced = false
+      for (const [key, cost] of costOfKey) {
+        if (splitModelKey(key).model !== name || cost === null) continue
+        priced = true
+        sum += cost
+      }
+      return priced ? sum : null
+    }
+
+    const sorted = [...groupCounters(byKey, 'model')].sort((a, b) => valueOf(b[1]) - valueOf(a[1]))
     const sum = sorted.reduce((acc, [, counters]) => acc + valueOf(counters), 0)
 
     const head = sorted.slice(0, TOP_SLICES)
     const tail = sorted.slice(TOP_SLICES)
     const restValue = tail.reduce((acc, [, counters]) => acc + valueOf(counters), 0)
 
-    const costOfModel = (name: string, counters: TokenCounters): number | null => {
-      const priceKey = resolveModelKey(snapshot.pricing, name)
-      const price = priceKey ? snapshot.pricing[priceKey] : undefined
-      return price ? costOf(counters, price) : null
-    }
-
     const list = head.map(([name, counters]) => ({
       key: name,
       name,
       value: valueOf(counters),
       color: colorForName(name),
-      cost: costOfModel(name, counters),
+      cost: costOfModel(name),
     }))
     if (restValue > 0) {
-      const restCost = tail.reduce((sum, [name, counters]) => sum + (costOfModel(name, counters) ?? 0), 0)
+      const restCost = tail.reduce((sum, [name]) => sum + (costOfModel(name) ?? 0), 0)
       list.push({ key: '__rest__', name: t('chart.groupRest'), value: restValue, color: '#94a3b8', cost: restCost })
     }
 
@@ -57,7 +66,7 @@ export const UsageRanking: FC<UsageRankingProps> = ({ snapshot, t }) => {
       rows: list,
       total: sum,
     }
-  }, [snapshot.byModelName, snapshot.pricing, metric, t])
+  }, [snapshot, range, metric, t])
 
   const formatValue = (value: number) => (metric === 'calls' ? formatNumber(value) : formatTokens(value))
   const showCost = Object.keys(snapshot.pricing).length > 0

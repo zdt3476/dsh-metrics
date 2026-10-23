@@ -1,12 +1,14 @@
 import { useMemo, type FC } from 'react'
 import { formatNumber, formatPercent, formatTokens } from '../../shared/format'
 import type { MetricsSnapshot } from '../../shared/types'
-import { costOf, resolveModelKey } from '../../shared/utils'
 import { colorForName } from '../colors'
 import { formatCurrency } from '../../shared/format'
+import { costByModelKey, groupCounters, rangeModelKeyCounters, splitModelKey, type TimeRange } from '../derived'
 
 export interface ProviderListProps {
   snapshot: MetricsSnapshot
+  /** 统计范围：列表与占比都按该范围重新聚合。 */
+  range: TimeRange
   t: (key: string, params?: Record<string, string | number>) => string
 }
 
@@ -16,26 +18,23 @@ export interface ProviderListProps {
  * 成功率需要按供应商记录失败次数，当前账本只保留全局失败计数，
  * 因此这里不展示成功率列，避免用全局比例冒充单供应商数据。
  */
-export const ProviderList: FC<ProviderListProps> = ({ snapshot, t }) => {
+export const ProviderList: FC<ProviderListProps> = ({ snapshot, range, t }) => {
   const rows = useMemo(() => {
-    const entries = Object.entries(snapshot.byProvider) as Array<[string, { calls: number; totalTokens: number }]>
-    const totalTokens = entries.reduce((sum, [, counters]) => sum + (counters.totalTokens ?? 0), 0)
+    const byKey = rangeModelKeyCounters(snapshot, range)
+    const providerTotals = groupCounters(byKey, 'provider')
+    const totalTokens = [...providerTotals.values()].reduce((sum, counters) => sum + (counters.totalTokens ?? 0), 0)
     const showCost = Object.keys(snapshot.pricing).length > 0
 
-    // 供应商维度的成本：把该供应商下各模型的价格分别应用
+    // 供应商成本：区间内各 provider/model 的成本按供应商相加
+    const costOfKey = costByModelKey(snapshot, byKey)
     const costByProvider = new Map<string, number>()
-    if (showCost) {
-      for (const [modelKey, counters] of Object.entries(snapshot.byModel)) {
-        const [provider] = modelKey.split('/')
-        const modelName = modelKey.slice(provider.length + 1)
-        const priceKey = resolveModelKey(snapshot.pricing, modelName)
-        const price = priceKey ? snapshot.pricing[priceKey] : undefined
-        if (!price) continue
-        costByProvider.set(provider, (costByProvider.get(provider) ?? 0) + costOf(counters, price))
-      }
+    for (const [key, cost] of costOfKey) {
+      if (cost === null) continue
+      const { provider } = splitModelKey(key)
+      costByProvider.set(provider, (costByProvider.get(provider) ?? 0) + cost)
     }
 
-    return entries
+    return [...providerTotals]
       .sort((a, b) => (b[1].totalTokens ?? 0) - (a[1].totalTokens ?? 0))
       .map(([name, counters]) => ({
         key: name,
@@ -45,7 +44,7 @@ export const ProviderList: FC<ProviderListProps> = ({ snapshot, t }) => {
         share: totalTokens > 0 ? (counters.totalTokens ?? 0) / totalTokens : 0,
         cost: showCost ? (costByProvider.get(name) ?? null) : null,
       }))
-  }, [snapshot.byProvider, snapshot.byModel, snapshot.pricing])
+  }, [snapshot, range])
 
   const showCost = Object.keys(snapshot.pricing).length > 0
 
