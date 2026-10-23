@@ -82,7 +82,7 @@ plugin_manager install_bundle @zdt3476/dsh-metrics
     }
   },
   "dependencies": {
-    "@zdt3476/dsh-metrics": "^1.0.2"
+    "@zdt3476/dsh-metrics": "^1.0.3"
   }
 }
 ```

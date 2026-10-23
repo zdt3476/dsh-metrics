@@ -2,7 +2,7 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 规范，版本号遵循 [语义化版本 2.0.0](https://semver.org/lang/zh-CN/)。
 
-## [未发布]
+## [1.0.3] - 2026-10-23
 
 ### 🐛 修复 (Fixes)
 
@@ -170,6 +170,7 @@
 
 ---
 
+[1.0.3]: https://github.com/zdt3476/dsh-metrics/releases/tag/v1.0.3
 [1.0.2]: https://github.com/zdt3476/dsh-metrics/releases/tag/v1.0.2
 [1.0.1]: https://github.com/zdt3476/dsh-metrics/releases/tag/v1.0.1
 [1.0.0]: https://github.com/zdt3476/dsh-metrics/releases/tag/v1.0.0
