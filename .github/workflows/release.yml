@@ -26,6 +26,8 @@ jobs:
         with:
           node-version: '24'
           cache: 'pnpm'
+          # 写入 registry 配置；npm CLI 依赖 registry 配置齐全才走 OIDC 交换
+          registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
