@@ -69,3 +69,20 @@ jobs:
           fi
           # lib/ 已在上面构建完成，避免 prepack 重复构建
           npm publish --ignore-scripts --access public
+
+      # 诊断：发布失败时解码 OIDC claims，核对 npm Trusted Publisher 配置字段
+      - name: Debug OIDC claims on failure
+        if: failure()
+        run: |
+          node -e "
+          const url = process.env.ACTIONS_ID_TOKEN_REQUEST_URL
+          const token = process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN
+          if (!url || !token) { console.log('无 OIDC 环境变量'); process.exit(0) }
+          fetch(url + '&audience=npm:registry.npmjs.org', { headers: { Authorization: 'Bearer ' + token } })
+            .then(r => r.json())
+            .then(({ value }) => {
+              const [, payload] = value.split('.')
+              const claims = JSON.parse(Buffer.from(payload, 'base64').toString())
+              console.log('OIDC claims:', JSON.stringify(claims, null, 2))
+            })
+          "
