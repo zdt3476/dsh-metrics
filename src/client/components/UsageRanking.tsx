@@ -1,7 +1,7 @@
 import { useMemo, useState, type FC } from 'react'
 import { formatCurrency, formatNumber, formatPercent, formatTokens } from '../../shared/format'
 import type { MetricsSnapshot, TokenCounters } from '../../shared/types'
-import { colorForName } from '../colors'
+import { createColorAllocator, NEUTRAL_SLICE_COLOR } from '../colors'
 import { costByModelKey, groupCounters, rangeModelKeyCounters, splitModelKey, type TimeRange } from '../derived'
 import { DonutChart } from './DonutChart'
 
@@ -42,6 +42,8 @@ export const UsageRanking: FC<UsageRankingProps> = ({ snapshot, range, t }) => {
       return priced ? sum : null
     }
 
+    // 同屏图例不得撞色：按用量降序依次分配槽位
+    const allocate = createColorAllocator()
     const sorted = [...groupCounters(byKey, 'model')].sort((a, b) => valueOf(b[1]) - valueOf(a[1]))
     const sum = sorted.reduce((acc, [, counters]) => acc + valueOf(counters), 0)
 
@@ -53,12 +55,12 @@ export const UsageRanking: FC<UsageRankingProps> = ({ snapshot, range, t }) => {
       key: name,
       name,
       value: valueOf(counters),
-      color: colorForName(name),
+      color: allocate(name),
       cost: costOfModel(name),
     }))
     if (restValue > 0) {
       const restCost = tail.reduce((sum, [name]) => sum + (costOfModel(name) ?? 0), 0)
-      list.push({ key: '__rest__', name: t('chart.groupRest'), value: restValue, color: '#94a3b8', cost: restCost })
+      list.push({ key: '__rest__', name: t('chart.groupRest'), value: restValue, color: NEUTRAL_SLICE_COLOR, cost: restCost })
     }
 
     return {
@@ -79,7 +81,7 @@ export const UsageRanking: FC<UsageRankingProps> = ({ snapshot, range, t }) => {
       <>
         <div className="tm-tip-title">{row.name}</div>
         <div className="tm-tip-row">
-          <span>{metric === 'calls' ? t('field.calls') : 'tokens'}</span>
+          <span>{metric === 'calls' ? t('field.calls') : t('metric.tokensUnit')}</span>
           <b>{formatValue(row.value)}</b>
         </div>
         <div className="tm-tip-row">
@@ -97,13 +99,13 @@ export const UsageRanking: FC<UsageRankingProps> = ({ snapshot, range, t }) => {
   }
 
   return (
-    <section className="tm-model-usage">
-      <header className="tm-card-head">
-        <h3 className="tm-card-title">{t('metric.modelUsage')}</h3>
-        <div className="tm-sort-group" role="group" aria-label={t('metric.modelUsage')}>
+    <section className="tm-panel-card">
+      <header className="tm-panel-head">
+        <h3 className="tm-panel-title">{t('metric.modelUsage')}</h3>
+        <div className="tm-seg" role="group" aria-label={t('metric.modelUsage')}>
           <button
             type="button"
-            className={`tm-sort-btn ${metric === 'calls' ? 'active' : ''}`}
+            className="tm-seg-item"
             aria-pressed={metric === 'calls'}
             onClick={() => setMetric('calls')}
           >
@@ -111,7 +113,7 @@ export const UsageRanking: FC<UsageRankingProps> = ({ snapshot, range, t }) => {
           </button>
           <button
             type="button"
-            className={`tm-sort-btn ${metric === 'tokens' ? 'active' : ''}`}
+            className="tm-seg-item"
             aria-pressed={metric === 'tokens'}
             onClick={() => setMetric('tokens')}
           >
@@ -120,36 +122,38 @@ export const UsageRanking: FC<UsageRankingProps> = ({ snapshot, range, t }) => {
         </div>
       </header>
 
-      <div className="tm-model-usage-body">
+      <div className="tm-donut-body">
         <DonutChart
           slices={slices}
           centerValue={formatTokens(total)}
-          centerLabel={metric === 'calls' ? t('field.calls') : 'tokens'}
+          centerLabel={metric === 'calls' ? t('field.calls') : t('metric.tokensUnit')}
+          size={120}
+          thickness={20}
           activeKey={activeKey}
           onActiveChange={setActiveKey}
           tooltipFor={tooltipFor}
         />
-        <ul className="tm-model-legend">
+        <ul className="tm-rank-list">
           {rows.map(row => {
             const share = total > 0 ? row.value / total : 0
             return (
               <li
                 key={row.key}
-                className={activeKey === row.key ? 'is-active' : ''}
+                className={`tm-rank-row ${activeKey === row.key ? 'is-active' : ''}`}
                 onMouseEnter={() => setActiveKey(row.key)}
                 onMouseLeave={() => setActiveKey(null)}
               >
                 <i className="tm-legend-dot" style={{ background: row.color }} />
-                <span className="tm-model-name" title={row.name}>
+                <span className="tm-rank-row__name" title={row.name}>
                   {row.name}
                 </span>
                 {showCost && (
-                  <span className="tm-model-cost">
+                  <span className="tm-rank-row__cost">
                     {row.cost === null ? '—' : formatCurrency(row.cost, 'USD')}
                   </span>
                 )}
-                <span className="tm-model-value">{formatValue(row.value)}</span>
-                <span className="tm-model-share">{formatPercent(share, 1)}</span>
+                <span className="tm-rank-row__value">{formatValue(row.value)}</span>
+                <span className="tm-rank-row__share">{formatPercent(share, 1)}</span>
               </li>
             )
           })}

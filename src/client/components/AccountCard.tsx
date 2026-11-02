@@ -14,42 +14,44 @@ export const AccountCard: FC<AccountCardProps> = ({ account, t }) => {
   const initial = (name[0] || 'U').toUpperCase()
 
   return (
-    <div className="tm-account-card">
-      <div className="tm-account-info">
-        <div className="tm-account-avatar">{initial}</div>
-        <div className="tm-account-details">
-          <div className="tm-account-name">{name}</div>
-          <div style={{ fontSize: '11px', color: 'var(--tm-text-muted)' }}>
-            {t('account.current')} · {account.id}
+    <div className="tm-account">
+      <div className="tm-account-id">
+        <div className="tm-avatar">{initial}</div>
+        <div className="tm-account-text">
+          <div className="tm-account-name" title={name}>
+            {name}
+          </div>
+          <div className="tm-account-meta" title={account.id}>
+            {t('account.current')}
+            {account.id ? ` · ${account.id}` : ''}
           </div>
         </div>
       </div>
 
-      <div className="tm-account-balances">
+      <div className="tm-balances">
         {account.balance?.map((w, idx) => (
-          <div key={`bal-${idx}`} className="tm-balance-item">
+          <div key={`bal-${idx}`} className="tm-balance">
             <span className="tm-balance-label">{w.currency} {t('account.balance')}</span>
             <span className="tm-balance-value">{formatCurrency(w.balance, w.currency)}</span>
           </div>
         ))}
 
         {account.bonus?.map((w, idx) => (
-          <div key={`bonus-${idx}`} className="tm-balance-item">
+          <div key={`bonus-${idx}`} className="tm-balance">
             <span className="tm-balance-label">{w.currency} {t('account.bonus')}</span>
-            <span className="tm-balance-value" style={{ color: 'var(--tm-accent)' }}>
+            <span className="tm-balance-value tm-balance-value--bonus">
               {formatCurrency(w.balance, w.currency)}
             </span>
           </div>
         ))}
 
-        <div style={{ display: 'flex', gap: '8px', marginLeft: '8px' }}>
+        <div className="tm-controls">
           {account.usageUrl && (
             <a
               href={account.usageUrl}
               target="_blank"
               rel="noreferrer"
-              className="tm-btn"
-              style={{ textDecoration: 'none' }}
+              className="tm-btn tm-btn--quiet"
             >
               {t('account.usagePage')}
             </a>
@@ -59,8 +61,7 @@ export const AccountCard: FC<AccountCardProps> = ({ account, t }) => {
               href={account.topUpUrl}
               target="_blank"
               rel="noreferrer"
-              className="tm-btn"
-              style={{ textDecoration: 'none' }}
+              className="tm-btn tm-btn--quiet"
             >
               {t('account.topUp')}
             </a>

@@ -1,0 +1,135 @@
+/**
+ * 设计令牌层 —— 唯一的取值来源。
+ *
+ * 结构：普通 :root 定义「语义令牌」（--tm-*），@theme 只做一层映射把它们暴露成
+ * Tailwind 的 color/text/radius 命名空间，供 @apply 使用。之所以不让 @theme 直接
+ * 承载色值：Tailwind 会 tree-shake 掉未被 utility 引用的 @theme 变量，而手写 CSS 与
+ * SVG 属性里的 var() 无法被它感知，直接写进 @theme 会导致取不到值。
+ *
+ * 暗色跟随 DSH 宿主的 body[data-ds-dark-theme]，而不是 prefers-color-scheme ——
+ * 宿主切换主题时插件必须同步，两者不一致会出现浅色面板套在深色界面里。
+ *
+ * 配色 6-3-1：底色 60% / 结构层 30% / 强调 10%。全部为微偏暖中性灰，无纯黑。
+ * 对比度已按 WCAG AA 校验（正文 ≥4.5:1，主文字 ≥15:1）。
+ */
+
+:root {
+  /* 60% —— 主背景与容器 */
+  --tm-bg: #f6f4f1;
+  --tm-card: #ffffff;
+  --tm-sunken: #edeae4;
+
+  /* 30% —— 结构与正文 */
+  --tm-line: #e6e1d9;
+  --tm-line-strong: #c6bfb3;
+  --tm-ink: #1b1917;
+  --tm-ink-2: #514c45;
+  --tm-ink-3: #6e6861;
+
+  /* 10% —— 唯一强调色（暖赤陶，饱和度 57%） */
+  --tm-accent: #a9502f;
+  --tm-accent-hover: #8f4426;
+  --tm-on-accent: #ffffff;
+  --tm-accent-soft: #f3e7e0;
+
+  /* 语义状态色 */
+  --tm-success: #286b49;
+  --tm-warn: #8a5a16;
+  --tm-danger: #a33a34;
+
+  /* 交互覆盖层 */
+  --tm-hover: rgb(27 25 23 / 0.04);
+  --tm-active: rgb(27 25 23 / 0.07);
+  --tm-ring: rgb(169 80 47 / 0.45);
+  --tm-skeleton: #e8e4dc;
+
+  /* 字阶（字号 / 行高成对，行高用像素值不用倍率） */
+  --tm-font-display: 36px;
+  --tm-lh-display: 40px;
+  --tm-font-metric: 27px;
+  --tm-lh-metric: 32px;
+  --tm-font-title: 15px;
+  --tm-lh-title: 22px;
+  --tm-font-body: 13px;
+  --tm-lh-body: 20px;
+  --tm-font-meta: 12px;
+  --tm-lh-meta: 18px;
+  --tm-font-caption: 11px;
+  --tm-lh-caption: 16px;
+
+  /* 圆角只有三档 */
+  --tm-radius-sm: 4px;
+  --tm-radius-md: 8px;
+  --tm-radius-lg: 12px;
+
+  /* 阴影：染成背景色相，避免灰蒙感 */
+  --tm-shadow: 0 1px 2px rgb(38 33 26 / 0.06), 0 4px 12px rgb(38 33 26 / 0.04);
+
+  --tm-font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  --tm-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+body[data-ds-dark-theme] {
+  --tm-bg: #151412;
+  --tm-card: #1d1b18;
+  --tm-sunken: #232119;
+
+  --tm-line: #302d28;
+  --tm-line-strong: #4a453c;
+  --tm-ink: #efece6;
+  --tm-ink-2: #beb8ae;
+  --tm-ink-3: #948e85;
+
+  --tm-accent: #d2895f;
+  --tm-accent-hover: #dfa07c;
+  --tm-on-accent: #1b1917;
+  --tm-accent-soft: #2e241d;
+
+  --tm-success: #5fae86;
+  --tm-warn: #c89a4e;
+  --tm-danger: #d9736c;
+
+  --tm-hover: rgb(239 236 230 / 0.05);
+  --tm-active: rgb(239 236 230 / 0.09);
+  --tm-ring: rgb(210 137 95 / 0.5);
+  --tm-skeleton: #2a2823;
+
+  --tm-shadow: 0 1px 2px rgb(0 0 0 / 0.28), 0 4px 12px rgb(0 0 0 / 0.2);
+}
+
+/* 数据色序列：低饱和、按亮度交替排序，保证相邻曲线可辨。
+   独立于主题令牌，因为图表颜色需要按序索引而不是语义命名。 */
+:root {
+  --tm-series-1: #9c4a2b;
+  --tm-series-2: #5e7a2e;
+  --tm-series-3: #2f6b7d;
+  --tm-series-4: #8a5a2e;
+  --tm-series-5: #5a4e82;
+  --tm-series-6: #33705c;
+  --tm-series-7: #96506b;
+  --tm-series-8: #a08234;
+
+  /* 热力图五档单色阶 */
+  --tm-heat-0: #ece7df;
+  --tm-heat-1: #dfb6a2;
+  --tm-heat-2: #c48567;
+  --tm-heat-3: #a2532f;
+  --tm-heat-4: #7a3a1f;
+}
+
+body[data-ds-dark-theme] {
+  --tm-series-1: #d2895f;
+  --tm-series-2: #9dbf62;
+  --tm-series-3: #6fa8b8;
+  --tm-series-4: #c9945c;
+  --tm-series-5: #9b8fc4;
+  --tm-series-6: #6dbf97;
+  --tm-series-7: #c98aa4;
+  --tm-series-8: #c9b178;
+
+  --tm-heat-0: #2e2a24;
+  --tm-heat-1: #5a4133;
+  --tm-heat-2: #8a5e45;
+  --tm-heat-3: #b87f5c;
+  --tm-heat-4: #d9a67f;
+}

@@ -427,8 +427,18 @@ export class TokenTracker {
       cacheHitRate: cacheHitRate(counters),
     })
 
+    /**
+     * 「全部」必须与可查明细同口径：store.total 是累计量且不随 retentionDays 裁剪，
+     * 而 byDay / byModelDay 会被裁掉。两者长期并存会让「全部」的总数大于
+     * 模型/供应商明细之和，同屏出现两个对不上的数字。
+     * 因此在有日级明细时，用日级之和覆盖累计量；账本尚无日级数据时再退回累计量。
+     */
+    const detailTotal = emptyCounters()
+    for (const counters of Object.values(this.store.byDay)) mergeCounters(detailTotal, counters)
+    const hasDetail = Object.keys(this.store.byDay).length > 0
+
     const totals = {
-      all: withRate(this.store.total),
+      all: withRate(hasDetail ? detailTotal : this.store.total),
       today: withRate(this.store.byDay[today] ?? emptyCounters()),
       week: withRate(sumDaysFrom(weekStart)),
     }

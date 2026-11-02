@@ -353,6 +353,10 @@ export function splitModelKey(key: string): { provider: string; model: string } 
  *
  * 模型用量与供应商明细都从这一份结果派生：日级范围走 byModelDay，
  * 「24 小时」走按模型拆分的小时桶，两条路径都保留供应商信息。
+ *
+ * 「全部」例外：走 snapshot.byModel 而不是逐日累加。原因是对齐口径——
+ * 宿主侧 totals.all 在有日级明细时取的是「日级之和」，byModel 与 byDay 由同一次
+ * 记账写入，两者天然一致；逐日累加则会受到 retentionDays 裁剪影响而偏小。
  */
 export function rangeModelKeyCounters(
   snapshot: MetricsSnapshot,
@@ -371,6 +375,11 @@ export function rangeModelKeyCounters(
     for (const bucket of windowedHours(snapshot, now)) {
       for (const [key, counters] of Object.entries(bucket.byModel)) add(key, counters)
     }
+    return totals
+  }
+
+  if (range === 'all') {
+    for (const [key, counters] of Object.entries(snapshot.byModel ?? {})) add(key, counters)
     return totals
   }
 

@@ -4,6 +4,7 @@ import { isBuiltin } from 'node:module'
 import { basename, dirname, join, resolve as resolvePath } from 'node:path'
 import { transform } from 'lightningcss'
 import { defineConfig } from 'tsdown'
+import { compileClientStyles } from './tailwind.config.ts'
 
 const pkg = JSON.parse(readFileSync(join(process.cwd(), 'package.json'), 'utf8'))
 
@@ -49,7 +50,14 @@ const NODE_ENV = process.env.NODE_ENV ?? 'production'
 
 const CSS_VIRTUAL_PREFIX = '\0dsh-css:'
 const GLOBAL_CSS_VIRTUAL_PREFIX = '\0dsh-global-css:'
+const TAILWIND_VIRTUAL_PREFIX = '\0dsh-tailwind-css:'
 const CSS_VIRTUAL_SUFFIX = '.mjs'
+
+/**
+ * Tailwind 入口文件后缀。带这个后缀的 CSS 不走 lightningcss 直通通道，
+ * 而是先交给 Tailwind 编译（解析 @import / @theme / @apply），再内联。
+ */
+const TAILWIND_ENTRY_SUFFIX = '.tw.css'
 
 function styleInjectionModule(
   id: string,
@@ -101,6 +109,31 @@ function cssChannels(id: string) {
           .sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))
         for (const [local, exp] of exportEntries) classMap[local] = exp.name
         return styleInjectionModule(id, fileId, code.toString(), classMap)
+      },
+    },
+    {
+      // 必须在通用 CSS 通道之前命中：Tailwind 入口既要被 Tailwind 预编译，
+      // 又要把它 @import 进来的局部文件纳入 watch，否则改 theme.css 不会重建。
+      name: 'dsh-tailwind-inline',
+      resolveId(source: string, importer: string | undefined) {
+        if (!source.endsWith(TAILWIND_ENTRY_SUFFIX)) return null
+        const abs = importer !== undefined ? sourceAssetPath(source, importer) : source
+        return TAILWIND_VIRTUAL_PREFIX + abs + CSS_VIRTUAL_SUFFIX
+      },
+      async load(this: { addWatchFile(file: string): void }, virtualId: string) {
+        if (!virtualId.startsWith(TAILWIND_VIRTUAL_PREFIX)) return null
+        const fileId = virtualId.slice(TAILWIND_VIRTUAL_PREFIX.length, -CSS_VIRTUAL_SUFFIX.length)
+        this.addWatchFile(fileId)
+
+        // 入口通过 @import 引用的局部文件也要 watch，这里按目录简单登记
+        const styleDir = dirname(fileId)
+        for (const name of ['theme.css', 'components.css']) {
+          this.addWatchFile(join(styleDir, name))
+        }
+
+        const raw = await compileClientStyles(fileId)
+        const { code: css } = transform({ filename: fileId, code: Buffer.from(raw), minify: true })
+        return styleInjectionModule(id, fileId, css.toString())
       },
     },
     {

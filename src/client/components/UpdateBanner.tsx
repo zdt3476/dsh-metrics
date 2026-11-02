@@ -12,28 +12,27 @@ export const UpdateBanner: FC<UpdateBannerProps> = ({ updateInfo, updating, onUp
   if (!updateInfo || !updateInfo.hasUpdate) return null
 
   return (
-    <div className="tm-banner">
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <span style={{ fontWeight: 600 }}>🚀 {t('version.dotNew')}</span>
+    <div className="tm-notice tm-notice--accent">
+      <div className="tm-notice-body">
+        <span className="tm-notice-title">{t('version.dotNew')}</span>
         <span>
           v{updateInfo.currentVersion} → <strong>v{updateInfo.latestVersion}</strong>
         </span>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <div className="tm-notice-actions">
         {updateInfo.releaseUrl && (
           <a
             href={updateInfo.releaseUrl}
             target="_blank"
             rel="noreferrer"
             className="tm-btn"
-            style={{ textDecoration: 'none' }}
           >
             {t('version.notes')}
           </a>
         )}
         <button
           type="button"
-          className="tm-btn active"
+          className="tm-btn tm-btn--primary"
           onClick={onUpdate}
           disabled={updating}
         >

@@ -107,8 +107,11 @@ describe('ActivityHeatmap', () => {
   })
 
   it('顶部有月份标签', () => {
-    const marks = html.match(/tm-heatmap-month[^>]*>([^<]+)</g) ?? []
+    // 月份标签包了一层 span（相对网格定位以支持溢出到相邻列），按月份名匹配
+    const marks = html.match(/\d+月/g) ?? []
     expect(marks.length).toBeGreaterThan(1)
+    // 末尾标签需要单独右对齐，保证不被容器裁切
+    expect(html).toContain('is-tail')
   })
 })
 

@@ -75,7 +75,8 @@ const snapshot: MetricsSnapshot = {
     ],
   },
   byProvider: { deepseek: counters(4_300_000, 25_210, 3_000_000) },
-  byModel: { 'deepseek/deepseek-v4.1': counters(4_300_000, 25_210, 3_000_000) },
+  // 「全部」范围直接读 byModel（与 totals.all 同源），因此夹具必须与日级明细口径一致
+  byModel: { 'deepseek/deepseek-v4.1': counters(620_000, 3_000, 400_000) },
   byModelName: { 'deepseek-v4.1': { ...counters(4_300_000, 25_210), cacheHitRate: 0.45 } },
   byProject: {},
   byOrigin: {},
@@ -143,9 +144,8 @@ describe('UsageSummary', () => {
     const html = renderToStaticMarkup(
       h(UsageSummary, { snapshot, range: '7d' as const, onRangeChange: () => {}, t: zh }),
     )
-    expect(html).toContain('tm-range-group')
-    expect(html).toContain('tm-range-btn active')
-    expect(html).toContain('aria-pressed')
+    expect(html).toContain('tm-seg')
+    expect(html).toContain('aria-pressed="true"')
   })
 })
 
@@ -157,7 +157,7 @@ describe('UsageRanking', () => {
 
     expect(html).toContain('模型用量')
     expect(html).toContain('tm-donut')
-    expect(html).toContain('tm-model-legend')
+    expect(html).toContain('tm-rank-list')
 
     // 口径切换：按调用 / 按用量
     expect(html).toContain('按调用')
@@ -172,19 +172,19 @@ describe('UsageRanking', () => {
     const all = renderToStaticMarkup(h(UsageRanking, { snapshot, range: 'all', t: zh }))
     const today = renderToStaticMarkup(h(UsageRanking, { snapshot, range: 'today', t: zh }))
 
-    // 夹具：今天 100k，昨天 300k → 全部 400k
-    expect(all).toContain('400k')
+    // 夹具：今天 100k，昨天 300k → 全部 620k（与 totals.all 同源）
+    expect(all).toContain('620k')
     expect(today).toContain('100k')
-    expect(today).not.toContain('400k')
+    expect(today).not.toContain('620k')
   })
 
   it('供应商明细随统计范围重新聚合', () => {
     const all = renderToStaticMarkup(h(ProviderList, { snapshot, range: 'all', t: zh }))
     const today = renderToStaticMarkup(h(ProviderList, { snapshot, range: 'today', t: zh }))
 
-    expect(all).toContain('400k')
+    expect(all).toContain('620k')
     expect(today).toContain('100k')
-    expect(today).not.toContain('400k')
+    expect(today).not.toContain('620k')
   })
 })
 

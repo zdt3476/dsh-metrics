@@ -88,7 +88,7 @@ export const DonutChart: FC<DonutChartProps> = ({
         role="img"
         aria-label={`${centerLabel} ${centerValue}`}
       >
-        <circle cx={center} cy={center} r={radius} fill="none" stroke="var(--tm-border)" strokeWidth={thickness} opacity="0.35" />
+        <circle cx={center} cy={center} r={radius} fill="none" stroke="var(--tm-line)" strokeWidth={thickness} opacity="0.35" />
         {arcs.map(arc => {
           const active = activeKey === arc.key
           const dimmed = activeKey !== null && !active

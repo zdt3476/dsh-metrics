@@ -1,0 +1,36 @@
+/**
+ * Tailwind 编译入口 —— 只在构建期被 tsdown 读取，不进入运行时产物。
+ *
+ * 采用 prefix(tm)：产出的 utility 类名是 .tm\:flex 这种带前缀的形式，
+ * 不会与 DSH 宿主的全局样式或其它插件冲突（插件 CSS 是全量注入 <head> 的）。
+ *
+ * 只桥接颜色命名空间。圆角 / 间距 / 字体一律不桥接：Tailwind 自带的同名主题变量
+ * （--tm-radius-lg: .5rem 等）会与令牌层的 --tm-radius-lg: 12px 撞名，而它的
+ * @layer theme 优先级更高，会把令牌值覆盖成默认值。组件 CSS 直接
+ * var(--tm-radius-*) 取值即可，无需经过 Tailwind。
+ *
+ * utils 候选集为空：所有样式都通过 @apply 收敛到 components.css 的语义类，
+ * 因此产物只包含组件层，不会向宿主泄漏任何 utility。
+ */
+
+@import 'tailwindcss/theme.css' layer(theme) prefix(tm);
+@import 'tailwindcss/utilities.css' layer(utilities) prefix(tm);
+@import './theme.css';
+
+@theme {
+  --color-base: var(--tm-bg);
+  --color-card: var(--tm-card);
+  --color-sunken: var(--tm-sunken);
+  --color-line: var(--tm-line);
+  --color-line-strong: var(--tm-line-strong);
+  --color-ink: var(--tm-ink);
+  --color-ink-2: var(--tm-ink-2);
+  --color-ink-3: var(--tm-ink-3);
+  --color-accent: var(--tm-accent);
+  --color-accent-soft: var(--tm-accent-soft);
+  --color-success: var(--tm-success);
+  --color-warn: var(--tm-warn);
+  --color-danger: var(--tm-danger);
+}
+
+@import './components.css';

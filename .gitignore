@@ -22,3 +22,6 @@ rollback/
 # 本地临时比对产物
 /tmp-*/
 *.tmp
+
+# 本地渲染验证产物（Playwright 截图与夹具 bundle，不入库）
+/.render/

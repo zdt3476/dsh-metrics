@@ -1,7 +1,8 @@
 import { useMemo, useState, type FC } from 'react'
 import { formatTokens } from '../../shared/format'
 import type { ModelTrend, TokenCountersWithRate } from '../../shared/types'
-import { MODEL_PALETTE } from '../colors'
+import { seriesColor } from '../colors'
+import { EmptyState } from './States'
 
 export interface TrendChartProps {
   trend: Record<string, TokenCountersWithRate>
@@ -52,7 +53,7 @@ export const TrendChart: FC<TrendChartProps> = ({ trend, modelTrend, t }) => {
         series: modelTrend.series.map((item, index) => ({
           key: item.key,
           label: item.label,
-          color: MODEL_PALETTE[index % MODEL_PALETTE.length],
+          color: seriesColor(index),
           values: modelDays.map(day => item.values[day] ?? 0),
         })) as Series[],
       }
@@ -65,7 +66,7 @@ export const TrendChart: FC<TrendChartProps> = ({ trend, modelTrend, t }) => {
         {
           key: '__total__',
           label: t('chart.mode.total'),
-          color: MODEL_PALETTE[0],
+          color: seriesColor(0),
           values: trendDays.map(day => trend[day]?.totalTokens ?? 0),
         },
       ] as Series[],
@@ -82,11 +83,11 @@ export const TrendChart: FC<TrendChartProps> = ({ trend, modelTrend, t }) => {
 
   if (days.length < 2) {
     return (
-      <section className="tm-trend">
-        <header className="tm-card-head">
-          <h3 className="tm-card-title">{t('chart.trendTitle')}</h3>
+      <section className="tm-panel-card">
+        <header className="tm-panel-head">
+          <h3 className="tm-panel-title">{t('chart.trendTitle')}</h3>
         </header>
-        <div className="tm-empty">{t('chart.empty')}</div>
+        <EmptyState title={t('chart.emptyTitle')} text={t('chart.empty')} />
       </section>
     )
   }
@@ -94,9 +95,9 @@ export const TrendChart: FC<TrendChartProps> = ({ trend, modelTrend, t }) => {
   const labelStep = Math.max(1, Math.ceil(days.length / 6))
 
   return (
-    <section className="tm-trend">
-      <header className="tm-card-head">
-        <h3 className="tm-card-title">{t('chart.trendTitle')}</h3>
+    <section className="tm-panel-card">
+      <header className="tm-panel-head">
+        <h3 className="tm-panel-title">{t('chart.trendTitle')}</h3>
       </header>
 
       <ul className="tm-trend-legend">
@@ -119,11 +120,11 @@ export const TrendChart: FC<TrendChartProps> = ({ trend, modelTrend, t }) => {
                   y1={y}
                   x2={VIEW_WIDTH - PADDING.right}
                   y2={y}
-                  stroke="var(--tm-border)"
+                  stroke="var(--tm-line)"
                   strokeDasharray="4 4"
                   strokeWidth="0.8"
                 />
-                <text x={PADDING.left - 6} y={y + 3} textAnchor="end" fontSize="11" fill="var(--tm-text-muted)">
+                <text x={PADDING.left - 6} y={y + 3} textAnchor="end" fontSize="11" fill="var(--tm-ink-3)">
                   {formatTokens(max * ratio)}
                 </text>
               </g>
@@ -145,7 +146,7 @@ export const TrendChart: FC<TrendChartProps> = ({ trend, modelTrend, t }) => {
           {days.map((day, index) => {
             if (index % labelStep !== 0 && index !== days.length - 1) return null
             return (
-              <text key={`x-${day}`} x={xOf(index)} y={VIEW_HEIGHT - 5} textAnchor="middle" fontSize="11" fill="var(--tm-text-muted)">
+              <text key={`x-${day}`} x={xOf(index)} y={VIEW_HEIGHT - 5} textAnchor="middle" fontSize="11" fill="var(--tm-ink-3)">
                 {day.slice(5)}
               </text>
             )
@@ -157,7 +158,7 @@ export const TrendChart: FC<TrendChartProps> = ({ trend, modelTrend, t }) => {
               y1={PADDING.top}
               x2={xOf(hover)}
               y2={PADDING.top + innerHeight}
-              stroke="var(--tm-accent)"
+              stroke="var(--tm-ink-3)"
               strokeDasharray="2 2"
               strokeWidth="1"
             />

@@ -9,10 +9,15 @@ export interface ActivityHeatmapProps {
   t: (key: string, params?: Record<string, string | number>) => string
 }
 
-const WEEKDAY_LABELS = ['一', '二', '三', '四', '五', '六', '日']
-/** 行标签只标记这三天，和 GitHub 贡献图一致，避免七行文字糊成一片。 */
-const WEEKDAY_LABELED_ROWS = new Set([0, 2, 4])
-const MONTH_LABELS = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
+/**
+ * 行标签只标记周一/三/五，和 GitHub 贡献图一致，避免七行文字糊成一片。
+ * 文案走 i18n：英文界面下需要显示 Mon / Wed / Fri，不能残留中文。
+ */
+const WEEKDAY_LABELED_ROWS: Array<{ row: number; key: string }> = [
+  { row: 0, key: 'weekday.1' },
+  { row: 2, key: 'weekday.3' },
+  { row: 4, key: 'weekday.5' },
+]
 const LEVEL_COUNT = 4
 /** 月份标签之间至少间隔的列数，太窄时舍去后一个，避免文字互相压住。 */
 const MONTH_LABEL_MIN_GAP = 3
@@ -38,7 +43,7 @@ export const ActivityHeatmap: FC<ActivityHeatmapProps> = ({ snapshot, t }) => {
   const hostRef = useRef<HTMLDivElement>(null)
   const [tip, setTip] = useState<TipState | null>(null)
 
-  const { weeks, monthMarks, activeDays, rhythm, peak, today } = useMemo(() => {
+  const { weeks, monthMarks, lastMarkIndex, activeDays, rhythm, peak, today } = useMemo(() => {
     const days = heatmapDays()
     const day = dayKey(Date.now())
     const max = days.reduce((peak, key) => Math.max(peak, snapshot.byDay[key]?.totalTokens ?? 0), 1)
@@ -65,18 +70,19 @@ export const ActivityHeatmap: FC<ActivityHeatmapProps> = ({ snapshot, t }) => {
       lastMonth = month
       const previous = marks[marks.length - 1]
       if (previous && weekIndex - previous.weekIndex < MONTH_LABEL_MIN_GAP) return
-      marks.push({ weekIndex, label: MONTH_LABELS[month] })
+      marks.push({ weekIndex, label: t(`month.${month + 1}`) })
     })
 
     return {
       weeks: columns,
       monthMarks: marks,
+      lastMarkIndex: marks.length > 0 ? marks[marks.length - 1].weekIndex : -1,
       activeDays: cells.filter(cell => cell !== null && cell.tokens > 0).length,
       rhythm: computeRhythm(snapshot, days),
       peak: peakHour(snapshot),
       today: day,
     }
-  }, [snapshot])
+  }, [snapshot, t])
 
   const handleEnter = (event: MouseEvent<HTMLElement>, cell: Cell) => {
     const host = hostRef.current?.getBoundingClientRect()
@@ -90,30 +96,37 @@ export const ActivityHeatmap: FC<ActivityHeatmapProps> = ({ snapshot, t }) => {
   }
 
   return (
-    <section className="tm-activity">
-      <header className="tm-card-head">
-        <h3 className="tm-card-title">{t('metric.activity')}</h3>
-        <span className="tm-activity-hint">{t('activity.activeDays', { count: activeDays })}</span>
+    <section className="tm-panel-card">
+      <header className="tm-panel-head">
+        <h3 className="tm-panel-title">{t('metric.activity')}</h3>
+        <span className="tm-panel-hint">{t('activity.activeDays', { count: activeDays })}</span>
       </header>
 
-      <div className="tm-heatmap-wrap" ref={hostRef}>
-        <div className="tm-heatmap-scroll" onMouseLeave={() => setTip(null)}>
+      <div className="tm-spark-wrap" ref={hostRef}>
+        <div className="tm-heat-scroll" onMouseLeave={() => setTip(null)}>
           {/* 月份、星期与格子共用一个网格，行标签与格子的对齐由网格轨道保证 */}
-          <div className="tm-heatmap-board" style={{ gridTemplateColumns: `20px repeat(${weeks.length}, minmax(0, 1fr))` }}>
+          <div className="tm-heat-board" style={{ gridTemplateColumns: `20px repeat(${weeks.length}, minmax(0, 1fr))` }}>
             <span key="corner" />
             {weeks.map((_, weekIndex) => {
               const mark = monthMarks.find(item => item.weekIndex === weekIndex)
               return (
-                <span key={`m-${weekIndex}`} className="tm-heatmap-month" style={{ gridColumn: weekIndex + 2, gridRow: 1 }}>
-                  {mark ? mark.label : ''}
+                <span
+                  key={`m-${weekIndex}`}
+                  className={`tm-heat-month${mark && mark.weekIndex === lastMarkIndex ? ' is-tail' : ''}`}
+                  style={{ gridColumn: weekIndex + 2, gridRow: 1 }}
+                >
+                  {mark ? <span>{mark.label}</span> : null}
                 </span>
               )
             })}
-            {WEEKDAY_LABELS.map((label, row) => (
-              <span key={label} className="tm-heatmap-weekday" style={{ gridColumn: 1, gridRow: row + 2 }}>
-                {WEEKDAY_LABELED_ROWS.has(row) ? label : ''}
-              </span>
-            ))}
+            {Array.from({ length: 7 }, (_, row) => {
+              const labeled = WEEKDAY_LABELED_ROWS.find(item => item.row === row)
+              return (
+                <span key={`wd-${row}`} className="tm-heat-weekday" style={{ gridColumn: 1, gridRow: row + 2 }}>
+                  {labeled ? t(labeled.key) : ''}
+                </span>
+              )
+            })}
             {weeks.flatMap((column, weekIndex) =>
               column.map((cell, rowIndex) =>
                 cell === null ? (
@@ -138,7 +151,7 @@ export const ActivityHeatmap: FC<ActivityHeatmapProps> = ({ snapshot, t }) => {
 
         {tip && (
           <div
-            className="tm-tip tm-heatmap-tip"
+            className="tm-tip tm-heat-tip"
             style={{ left: `${tip.left}px`, top: `${tip.top}px` }}
             role="tooltip"
           >
@@ -163,7 +176,7 @@ export const ActivityHeatmap: FC<ActivityHeatmapProps> = ({ snapshot, t }) => {
         )}
       </div>
 
-      <footer className="tm-heatmap-legend">
+      <footer className="tm-heat-legend">
         <span>{t('activity.less')}</span>
         {Array.from({ length: LEVEL_COUNT + 1 }, (_, level) => (
           <i key={`l-${level}`} className={`tm-heatmap-cell level-${level}`} />

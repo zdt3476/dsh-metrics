@@ -10,11 +10,8 @@ import { TokenUsagePanel } from './components/TokenUsagePanel'
 import { DICT_EN, DICT_ZH } from './i18n'
 import { entrySeated, type ClientCtx } from './services'
 
-import './styles/base.css'
-import './styles/panel.css'
-import './styles/cards.css'
-import './styles/ranking.css'
-import './styles/overview.css'
+// 样式只有一个入口：Tailwind 在构建期把它连同令牌层与组件层编译成单段 CSS。
+import './styles/app.tw.css'
 
 const NS = 'dsh-metrics'
 const PANEL_ID = 'dsh-metrics'

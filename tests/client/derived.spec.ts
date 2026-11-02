@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { colorForName, MODEL_PALETTE } from '../../src/client/colors'
+import { createColorAllocator, SERIES_SLOTS, seriesColor } from '../../src/client/colors'
 import {
   computeRangeStats,
   computeRhythm,
@@ -192,17 +192,34 @@ describe('relativeTime', () => {
   })
 })
 
-describe('colorForName', () => {
-  it('is deterministic and stays inside the palette', () => {
-    const first = colorForName('deepseek-v4.1-flash')
-    expect(colorForName('deepseek-v4.1-flash')).toBe(first)
-    expect(MODEL_PALETTE).toContain(first)
+describe('图表配色分配', () => {
+  const slotOf = (color: string): number => Number(color.replace(/[^0-9]/g, ''))
+
+  it('同一次分配内不重复用色', () => {
+    const allocate = createColorAllocator()
+    const names = ['deepseek', 'anthropic', 'openai', 'google', 'alibaba']
+    const colors = names.map(allocate)
+    // 纯哈希会让 deepseek / anthropic / alibaba 全落在同一槽位，这里必须互不相同
+    expect(new Set(colors).size).toBe(names.length)
+    for (const color of colors) {
+      const slots = Array.from({ length: SERIES_SLOTS }, (_, index) => seriesColor(index))
+      expect(slots).toContain(color)
+    }
   })
 
-  it('distinguishes common model names', () => {
-    const names = ['deepseek-v4.1-flash', 'gemini-3.8-flash-high', 'gpt-6.1-sol']
-    const colors = new Set(names.map(colorForName))
-    expect(colors.size).toBeGreaterThan(1)
+  it('相同顺序得到相同结果，稳定可预期', () => {
+    const names = ['deepseek', 'anthropic', 'openai']
+    expect(names.map(createColorAllocator())).toEqual(names.map(createColorAllocator()))
+    expect(names.map(createColorAllocator()).map(slotOf)).toEqual(
+      names.map(createColorAllocator()).map(slotOf),
+    )
+  })
+
+  it('序列数超过槽位时回落到循环，不抛错', () => {
+    const allocate = createColorAllocator()
+    const colors = Array.from({ length: SERIES_SLOTS + 3 }, (_, index) => allocate(`m${index}`))
+    expect(colors).toHaveLength(SERIES_SLOTS + 3)
+    expect(colors.every(color => color.startsWith('var(--tm-series-'))).toBe(true)
   })
 })
 
@@ -220,6 +237,13 @@ describe('区间聚合（模型 / 供应商）', () => {
       'provider-b/model-y': {
         [dayKeyOf(40)]: { ...counters(50_000, 5_000, 0), cacheHitRate: 0 },
       },
+    },
+    // 「全部」直接读 byModel（与 totals.all 同源，避免被 retention 裁剪后对不上），
+    // 因此夹具里 byModel 必须等于日级明细的累计值
+    byModel: {
+      'provider-a/model-x': counters(9_300, 930, 120),
+      'provider-b/model-x': counters(300, 30, 0),
+      'provider-b/model-y': counters(50_000, 5_000, 0),
     },
     pricing: { 'model-x': { input: 1, output: 1, cacheRead: 0, cacheWrite: 0, reasoning: 0 } },
   })

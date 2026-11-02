@@ -1,4 +1,4 @@
-import { useMemo, useState, type FC, type MouseEvent } from 'react'
+import { useId, useMemo, useState, type FC, type MouseEvent } from 'react'
 
 export interface SparklineProps {
   /** 按时间升序的数值序列；空数组渲染为占位。 */
@@ -17,7 +17,7 @@ const VIEW_HEIGHT = 100
 const STROKE_WIDTH = 1.6
 
 /** 迷你趋势线：表达形状为主，悬停给出该点的刻度与数值。 */
-export const Sparkline: FC<SparklineProps> = ({ values, labels, format, color = 'var(--tm-accent)', area = true }) => {
+export const Sparkline: FC<SparklineProps> = ({ values, labels, format, color = 'var(--tm-series-1)', area = true }) => {
   const [hover, setHover] = useState<number | null>(null)
 
   const { points, line } = useMemo(() => {
@@ -36,7 +36,9 @@ export const Sparkline: FC<SparklineProps> = ({ values, labels, format, color = 
 
   if (values.length < 2) return null
 
-  const gradientId = `tm-spark-${color.replace(/[^a-z0-9]/gi, '')}`
+  // 同一屏会渲染多个迷你趋势线，颜色相同时基于颜色的 ID 会重复，
+  // 导致所有渐变都指向同一个 defs。用 useId 保证 DOM 内唯一。
+  const gradientId = `tm-spark${useId().replace(/[^a-zA-Z0-9-]/g, '')}`
 
   const handleMove = (event: MouseEvent<SVGSVGElement>) => {
     const rect = event.currentTarget.getBoundingClientRect()
